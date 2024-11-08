@@ -1,0 +1,179 @@
+local Transport = require("../transport")
+local Dialog = require("./dialog")
+local BoxModel = require("./box-model")
+local Target = require("../protocol/Target")
+local Page = require("../protocol/Page")
+local Browser = require("../protocol/Browser")
+local Runtime = require("../protocol/Runtime")
+local Network = require("../protocol/Network")
+local DOM = require("../protocol/DOM")
+local Log = require("../protocol/Log")
+
+export type Tab = {
+	targetId: string,
+	transport: Transport.Transport,
+	sessionId: string,
+	navigating: boolean,
+	targetInfo: Target.TargetInfo,
+	-- TODO: request_interceptor
+	-- TODO: response_handler
+	-- TODO: loading_failed_handler
+	-- TODO: auth_handler
+	defaultTimeout: number,
+	-- TODO: page_bindings
+	-- TODO: event_listeners
+	-- TODO: slow_motion_multiplier
+	getTargetId: (self: Tab) -> string,
+	updateTargetInfo: (self: Tab, targetInfo: Target.TargetInfo) -> (),
+	getUrl: (self: Tab) -> string,
+	setDefaultTimeout: (self: Tab, timeout: number) -> Tab,
+	callMethod: <Request, Response>(
+		self: Tab,
+		method: string & { __Request: Request, __Response: Response },
+		params: Request
+	) -> Response,
+	addEventListener: <Parameters>(
+		self: Tab,
+		event: string & { __Parameters: Parameters },
+		callback: (params: Parameters) -> ()
+	) -> () -> (),
+	getTargetInfo: (self: Tab) -> Target.TargetInfo,
+	getBrowserContextId: (self: Tab) -> string?,
+	setUserAgent: (self: Tab, userAgent: string, acceptLanguage: string?, platform: string?) -> (),
+	bringToFront: (self: Tab) -> (),
+	reload: (self: Tab, ignoreCache: boolean?, scriptToEvaluateOnLoad: string?) -> Tab,
+	stopLoading: (self: Tab) -> (),
+	navigateTo: (self: Tab, url: string) -> Tab,
+	waitUntilNavigated: (self: Tab) -> Tab,
+	getBounds: (self: Tab) -> Browser.Bounds,
+	setBounds: (self: Tab, bounds: Browser.Bounds) -> Tab,
+	evaluate: (self: Tab, expression: string, awaitPromise: boolean?) -> Runtime.RemoteObject,
+	setCookies: (self: Tab, cookies: { Network.CookieParam }) -> (),
+	getCookies: (self: Tab) -> { Network.Cookie },
+	deleteCookies: (
+		self: Tab,
+		cookies: {
+			{
+				name: string,
+				url: string?,
+				domain: string?,
+				path: string?,
+				partitionKey: Network.CookiePartitionKey?,
+			}
+		}
+	) -> (),
+	setStorage: (self: Tab, name: string, item: any) -> (),
+	getStorage: (self: Tab, name: string) -> any,
+	removeStorage: (self: Tab, name: string) -> (),
+	captureScreenshot: (
+		self: Tab,
+		options: {
+			format: "jpeg" | "png" | "webp"?,
+			quality: number?,
+			clip: Page.Viewport?,
+			fromSurface: boolean?,
+			captureBeyondViewport: boolean?,
+			optimizeForSpeed: boolean?,
+		}
+	) -> buffer,
+	printToPdf: (
+		self: Tab,
+		options: {
+			landscape: boolean?,
+			displayHeaderFooter: boolean?,
+			printBackground: boolean?,
+			scale: number?,
+			paperWidth: number?,
+			paperHeight: number?,
+			marginTop: number?,
+			marginBottom: number?,
+			marginLeft: number?,
+			marginRight: number?,
+			pageRanges: string?,
+			headerTemplate: string?,
+			footerTemplate: string?,
+			preferCSSPageSize: boolean?,
+			generateTaggedPDF: boolean?,
+			generateDocumentOutline: boolean?,
+		}?
+	) -> buffer,
+	startScreencast: (
+		self: Tab,
+		options: {
+			format: "jpeg" | "png"?,
+			quality: number?,
+			maxWidth: number?,
+			maxHeight: number?,
+			everyNthFrame: number?,
+		}
+	) -> (),
+	stopScreencast: (self: Tab) -> (),
+	ackScreencast: (self: Tab, sessionId: number) -> (),
+	onScreencast: (
+		self: Tab,
+		callback: (frame: { data: buffer, metadata: Page.ScreencastFrameMetadata, sessionId: number }) -> ()
+	) -> () -> (),
+	getDialog: (self: Tab) -> Dialog.Dialog,
+	getDocument: (self: Tab) -> DOM.Node,
+	runQuerySelectorOnNode: (self: Tab, nodeId: DOM.NodeId, selector: string) -> Element?,
+	runQuerySelectorAllOnNode: (self: Tab, nodeId: DOM.NodeId, selector: string) -> { Element },
+	findElement: (self: Tab, selector: string) -> Element?,
+	findElements: (self: Tab, selector: string) -> { Element },
+	waitForElement: (self: Tab, selector: string, timeout: number?) -> Element,
+	waitForElements: (self: Tab, selector: string, timeout: number?) -> { Element },
+	moveMouseToPoint: (self: Tab, point: Point) -> Tab,
+	clickPoint: (self: Tab, point: Point) -> Tab,
+	insertText: (self: Tab, text: string) -> Tab,
+	typeText: (self: Tab, text: string) -> Tab,
+	pressKeyWithModifiers: (self: Tab, key: string, modifiers: { "Alt" | "Ctrl" | "Meta" | "Shift" }?) -> Tab,
+	pressKey: (self: Tab, key: string) -> Tab,
+	startViolationsReport: (self: Tab, config: { Log.ViolationSetting }) -> Tab,
+	stopViolationsReport: (self: Tab) -> Tab,
+	enableStealthMode: (self: Tab) -> (),
+	close: (self: Tab) -> (),
+}
+
+export type Element = {
+	remoteObjectId: string,
+	backendNodeId: number,
+	nodeId: DOM.NodeId,
+	parent: Tab,
+	attributes: { string }?,
+	tag: string,
+	value: string,
+	getDescription: (self: Element) -> DOM.Node,
+	getAttributes: (self: Element) -> { string }?,
+	getAttributeValue: (self: Element, name: string) -> string?,
+	getInnerText: (self: Element) -> string,
+	getContent: (self: Element) -> string,
+	findElement: (self: Element, selector: string) -> Element?,
+	findElements: (self: Element, selector: string) -> { Element },
+	waitForElement: (self: Element, selector: string, timeout: number?) -> Element,
+	waitForElements: (self: Element, selector: string, timeout: number?) -> { Element },
+	callJsFunction: (
+		self: Element,
+		functionDeclaration: string,
+		args: { string }?,
+		awaitPromise: boolean?
+	) -> Runtime.RemoteObject,
+	getMidpoint: (self: Element) -> Point,
+	getBoxModel: (self: Element) -> BoxModel.BoxModel,
+	scrollIntoView: (self: Element) -> Element,
+	moveMouseOver: (self: Element) -> Element,
+	click: (self: Element) -> Element,
+	typeInto: (self: Element, text: string) -> Element,
+	focus: (self: Element) -> Element,
+	captureScreenshot: (
+		self: Element,
+		options: {
+			format: "jpeg" | "png" | "webp"?,
+			quality: number?,
+			fromSurface: boolean?,
+			optimizeForSpeed: boolean?,
+		}
+	) -> buffer,
+}
+
+export type Point = { x: number, y: number }
+
+return nil

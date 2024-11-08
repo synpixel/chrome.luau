@@ -1,0 +1,18 @@
+name = "synpixel/chrome"
+version = "0.1.0"
+description = "A port of rust-headless-chrome to Luau for Lune"
+authors = ["synpixel"]
+license = "MIT"
+repository = "https://github.com/synpixel/chrome.luau"
+includes = ["pesde.toml", "README.md", "LICENSE", "src"]
+
+[target]
+environment = "lune"
+
+[scripts]
+build = "scripts/build.luau"
+
+[indices]
+default = "https://github.com/daimond113/pesde-index"
+
+[dependencies]
