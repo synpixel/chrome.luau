@@ -39,7 +39,7 @@ type ProtocolDefinition = {
 
 local IN = "json"
 local OUT = "src/protocol"
-local FORMAT = false
+local FORMAT = true
 
 local function stylua(input: string): string
 	local result = process.spawn("stylua", { "-" }, { stdin = input, shell = true })
@@ -194,12 +194,21 @@ if fs.isDir(OUT) == false then
 	fs.writeDir(OUT)
 end
 
+local domainLog =
+	`{stdio.color("cyan")}<domain>{stdio.color("reset")} {stdio.style("dim")}>{stdio.style("reset")} {OUT}/<domain>.luau`
+
 for _, domain in browserDefinition.domains do
 	local file = writeDomainDefinition(domain)
 	fs.writeFile(`{OUT}/{domain.domain}.luau`, file)
+
+	local log = domainLog:gsub("<domain>", domain.domain)
+	print(log)
 end
 
 for _, domain in jsDefinition.domains do
 	local file = writeDomainDefinition(domain)
 	fs.writeFile(`{OUT}/{domain.domain}.luau`, file)
+
+	local log = domainLog:gsub("<domain>", domain.domain)
+	print(log)
 end
