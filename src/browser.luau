@@ -133,7 +133,7 @@ local function newTab(self: Browser): Tab.Tab
 	return self:newTabWithOptions({ url = "about:blank" })
 end
 
---- Adds tabs that have not been opened with new_tab to the list of tabs
+--- Adds tabs that have not been opened with `newTab` to the list of tabs
 --- @within Browser
 local function registerMissingTabs(self: Browser)
 	local targets = self:callMethod(Target.GetTargets, nil :: any)
