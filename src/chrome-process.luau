@@ -3,6 +3,27 @@ local net = require("@lune/net")
 local serde = require("@lune/serde")
 local defaultExecutable = require("./utils/default-executable")
 
+--- Represents the way in which Chrome is run. By default it will search for a Chrome
+--- binary on the system, use an available port for debugging, and start in headless mode.
+--- @interface LaunchOptions
+--- .headless boolean? -- Determines whether to run headless version of the browser. Defaults to true.
+--- .sandbox boolean? -- Determines whether to run the browser with a sandbox.
+--- .devtools boolean? -- Automatically open devtools for tabs. Forces headless to be false.
+--- .enableGpu boolean? -- Determines whether to enable GPU or not. Default to false.
+--- .enableLogging boolean? -- Determines whether to run the browser with logging enabled (this can cause unwanted new shell window in Windows 10 and above).
+--- .windowSize { width: number, height: number }? -- Launch the browser with a specific window width and height.
+--- .port number? -- Launch the browser with a specific debugging port.
+--- .ignoreCertificateErrors boolean? -- Determines whether SSL certificates should be verified. This is unsafe and can lead to MiTM attacks. This is unsafe and can lead to MiTM attacks. Make sure you understand the risks.
+--- .path string? -- Path for Chrome or Chromium. If unspecified, the create will try to automatically detect a suitable binary.
+--- .userDataDir string? -- User Data (Profile) to use.
+--- .extensions { string }? -- A list of Chrome extensions to load. An extension should be a path to a folder containing the extension code. CRX files cannot be used directly and must be first extracted. Note that Chrome does not support loading extensions in headless-mode.
+--- .args { string }? -- Additional arguments to pass to the browser instance. The list of Chromium flags can be found: <http://peter.sh/experiments/chromium-command-line-switches/>.
+--- .ignoreDefaultArgs { string }? -- Ignore a default given flag.
+--- .disableDefaultArgs boolean? -- Disable default arguments.
+--- .idleBrowserTimeout number? -- How long to keep the WebSocket to the browser for after not receiving any events from it. Defaults to 30 seconds.
+--- .processEnvs { [string]: string }? -- Environment variables to set for the Chromium process.
+--- .proxyServer string? -- Setup the proxy server for headless chrome instance
+--- @within ChromeProcess
 export type LaunchOptions = {
 	headless: boolean?,
 	sandbox: boolean?,
@@ -24,10 +45,9 @@ export type LaunchOptions = {
 	proxyServer: string?,
 }
 
+--- @class ChromeProcess
 export type ChromeProcess = { websocketUrl: string }
 
--- These are passed to the Chrome binary by default.
--- Via <https://github.com/GoogleChrome/puppeteer/blob/master/lib/Launcher.js#L38>
 local DEFAULT_ARGS = table.freeze({
 	"--disable-background-networking",
 	"--enable-features=NetworkService,NetworkServiceInProcess",
@@ -203,9 +223,7 @@ local function new(partialLaunchOptions: LaunchOptions?): ChromeProcess
 
 	local websocketUrl = getWebsocketUrl(launchOptions.port :: number)
 
-	return {
-		websocketUrl = websocketUrl,
-	}
+	return { websocketUrl = websocketUrl }
 end
 
 return { new = new }

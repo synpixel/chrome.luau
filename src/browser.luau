@@ -5,6 +5,19 @@ local Wait = require("./utils/wait")
 local Browser = require("./protocol/Browser")
 local Target = require("./protocol/Target")
 
+--[=[
+	A handle to an instance of Chrome / Chromium, which wraps a WebSocket connection to its debugging port.
+
+	Most of your actual "driving" (e.g. clicking, typing, navigating) will be via instances of [Tab](../api/Tab), which are accessible via methods such as `getTabs`.
+
+	A Browser can either manage its own Chrome process or connect to a remote one.
+
+	`Browser.new()` will return a headless instance of whatever browser can be found using
+	`defaultExecutable`, which will search on your PATH for relevant binaries or use the path
+	specified in the `CHROME` env var.
+
+	@class Browser
+]=]
 export type Browser = {
 	transport: Transport.Transport,
 	tabs: { Tab.Tab },
@@ -48,10 +61,13 @@ export type Browser = {
 
 local DEFAULT_IDLE_TIMEOUT = 30
 
+--- @within Browser
 local function getTabs(self: Browser): { Tab.Tab }
 	return self.tabs
 end
 
+--- Call a browser method.
+--- @within Browser
 local function callMethod<Request, Response>(
 	self: Browser,
 	method: string & { __Request: Request, __Response: Response },
@@ -60,6 +76,8 @@ local function callMethod<Request, Response>(
 	return self.transport:callMethodOnBrowser(method, params)
 end
 
+--- Adds event listener to `event`
+--- @within Browser
 local function addEventListener<Parameters>(
 	self: Browser,
 	event: string & { __Parameters: Parameters },
@@ -68,6 +86,8 @@ local function addEventListener<Parameters>(
 	return self.transport:listenToBrowserEvent(event, callback)
 end
 
+--- Get version information
+--- @within Browser
 local function getVersion(self: Browser): {
 	protocolVersion: string,
 	product: string,
@@ -78,6 +98,8 @@ local function getVersion(self: Browser): {
 	return self:callMethod(Browser.GetVersion)
 end
 
+--- Create a new tab with a starting url, height / width, context ID and 'frame control'
+--- @within Browser
 local function newTabWithOptions(
 	self: Browser,
 	options: {
@@ -104,10 +126,15 @@ local function newTabWithOptions(
 	end)
 end
 
+--- Create a new tab and return a handle to it.
+--- If you want to specify its starting options, see `newTabWithOptions`.
+--- @within Browser
 local function newTab(self: Browser): Tab.Tab
 	return self:newTabWithOptions({ url = "about:blank" })
 end
 
+--- Adds tabs that have not been opened with new_tab to the list of tabs
+--- @within Browser
 local function registerMissingTabs(self: Browser)
 	local targets = self:callMethod(Target.GetTargets, nil :: any)
 
@@ -182,11 +209,16 @@ local function handleBrowserLevelEvents(self: Browser)
 	end)
 end
 
+--- Closes the browser.
+--- @within Browser
 local function close(self: Browser)
 	self.transport:callMethodOnBrowser(Browser.Close)
 	self.transport:shutdown()
 end
 
+--- Allows you to drive an externally-launched Chrome process instead of launch one via Browser.new.
+--- If the browser is idle for `idleBrowserTimeout`, the connection will be dropped.
+--- @within Browser
 local function connectWithTimeout(websocketUrl: string, idleBrowserTimeout: number): Browser
 	local transport = Transport.new(websocketUrl, idleBrowserTimeout)
 
@@ -209,10 +241,15 @@ local function connectWithTimeout(websocketUrl: string, idleBrowserTimeout: numb
 	return browser
 end
 
+--- Allows you to drive an externally-launched Chrome process instead of launch one via Browser.new.
+--- If the browser is idle for 30 seconds, the connection will be dropped.
+--- @within Browser
 local function connect(websocketUrl: string): Browser
 	return connectWithTimeout(websocketUrl, DEFAULT_IDLE_TIMEOUT)
 end
 
+--- Launch a new Chrome browser.
+--- @within Browser
 local function new(launchOptions: ChromeProcess.LaunchOptions?): Browser
 	local chromeProcess = ChromeProcess.new(launchOptions)
 	local idleBrowserTimeout = if launchOptions == nil or launchOptions.idleBrowserTimeout == nil

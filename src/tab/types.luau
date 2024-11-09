@@ -48,6 +48,7 @@ export type Tab = {
 	getBounds: (self: Tab) -> Browser.Bounds,
 	setBounds: (self: Tab, bounds: Browser.Bounds) -> Tab,
 	evaluate: (self: Tab, expression: string, awaitPromise: boolean?) -> Runtime.RemoteObject,
+	getTitle: (self: Tab) -> string,
 	setCookies: (self: Tab, cookies: { Network.CookieParam }) -> (),
 	getCookies: (self: Tab) -> { Network.Cookie },
 	deleteCookies: (
@@ -63,7 +64,7 @@ export type Tab = {
 		}
 	) -> (),
 	setStorage: (self: Tab, name: string, item: any) -> (),
-	getStorage: (self: Tab, name: string) -> any,
+	getStorage: (self: Tab, name: string) -> any?,
 	removeStorage: (self: Tab, name: string) -> (),
 	captureScreenshot: (
 		self: Tab,
@@ -115,6 +116,7 @@ export type Tab = {
 	) -> () -> (),
 	getDialog: (self: Tab) -> Dialog.Dialog,
 	getDocument: (self: Tab) -> DOM.Node,
+	getContent: (self: Tab) -> string,
 	runQuerySelectorOnNode: (self: Tab, nodeId: DOM.NodeId, selector: string) -> Element?,
 	runQuerySelectorAllOnNode: (self: Tab, nodeId: DOM.NodeId, selector: string) -> { Element },
 	findElement: (self: Tab, selector: string) -> Element?,

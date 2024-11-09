@@ -2,6 +2,8 @@ local serde = require("@lune/serde")
 local Regex = require("@lune/regex")
 local Transport = require("../transport")
 local Element = require("./element")
+local ElementQuad = require("./element-quad")
+local BoxModel = require("./box-model")
 local Dialog = require("./dialog")
 local keys = require("./keys")
 local Wait = require("../utils/wait")
@@ -16,25 +18,39 @@ local DOM = require("../protocol/DOM")
 local Input = require("../protocol/Input")
 local Log = require("../protocol/Log")
 
+--- A handle to a single page. Exposes methods for simulating user actions (clicking,
+--- typing), and also for getting information about the DOM and other parts of the page.
+--- @class Tab
 export type Tab = types.Tab
 
+export type Element = types.Element
+export type ElementQuad = ElementQuad.ElementQuad
+export type BoxModel = BoxModel.BoxModel
+
+--- @within Tab
 local function getTargetId(self: Tab): string
 	return self.targetId
 end
 
+--- @within Tab
 local function updateTargetInfo(self: Tab, targetInfo: Target.TargetInfo)
 	self.targetInfo = targetInfo
 end
 
+--- @within Tab
 local function getUrl(self: Tab): string
 	return self.targetInfo.url
 end
 
+--- Set default timeout for the tab
+--- @within Tab
 local function setDefaultTimeout(self: Tab, timeout: number): Tab
 	self.defaultTimeout = timeout
 	return self
 end
 
+--- Call a target method.
+--- @within Tab
 local function callMethod<Request, Response>(
 	self: Tab,
 	method: string & { __Request: Request, __Response: Response },
@@ -43,6 +59,8 @@ local function callMethod<Request, Response>(
 	return self.transport:callMethodOnTarget(method, parameters, self.sessionId)
 end
 
+--- Adds event listener to `event`
+--- @within Tab
 local function addEventListener<Parameters>(
 	self: Tab,
 	event: string & { __Parameters: Parameters },
@@ -51,15 +69,20 @@ local function addEventListener<Parameters>(
 	return self.transport:listenToTargetEvent(event, self.sessionId, callback)
 end
 
+--- Fetches the most recent info about this target
+--- @within Tab
 local function getTargetInfo(self: Tab): Target.TargetInfo
 	return self:callMethod(Target.GetTargetInfo, { targetId = self.targetId }).targetInfo
 end
 
+--- @within Tab
 local function getBrowserContextId(self: Tab): string?
 	local targetInfo = self:getTargetInfo()
 	return targetInfo.browserContextId
 end
 
+--- Allows overriding user agent with the given string.
+--- @within Tab
 local function setUserAgent(self: Tab, userAgent: string, acceptLanguage: string?, platform: string?)
 	self:callMethod(
 		Network.SetUserAgentOverride,
@@ -67,19 +90,32 @@ local function setUserAgent(self: Tab, userAgent: string, acceptLanguage: string
 	)
 end
 
+--- Pulls focus to this tab
+--- @within Tab
 local function bringToFront(self: Tab)
 	self:callMethod(Page.BringToFront)
 end
 
+--[=[
+	Reloads given page optionally ignoring the cache
+
+	If `ignoreCache` is true, the browser cache is ignored (as if the user pressed Shift+F5).  
+	If `scriptToEvaluate` is given, the script will be injected into all frames of the
+	inspected page after reload. Argument will be ignored if reloading dataURL origin.
+
+	@within Tab
+]=]
 local function reload(self: Tab, ignoreCache: boolean?, scriptToEvaluateOnLoad: string?): Tab
 	self:callMethod(Page.Reload, { ignoreCache = ignoreCache, scriptToEvaluateOnLoad = scriptToEvaluateOnLoad })
 	return self
 end
 
+--- @within Tab
 local function stopLoading(self: Tab)
 	self:callMethod(Page.StopLoading)
 end
 
+--- @within Tab
 local function navigateTo(self: Tab, url: string): Tab
 	self:callMethod(Page.Navigate, { url = url })
 	self.navigating = true
@@ -87,6 +123,7 @@ local function navigateTo(self: Tab, url: string): Tab
 	return self
 end
 
+--- @within Tab
 local function waitUntilNavigated(self: Tab): Tab
 	Wait.withTimeout(20):pauseUntil(function()
 		return if self.navigating then Wait.None else true
@@ -95,10 +132,27 @@ local function waitUntilNavigated(self: Tab): Tab
 	return self
 end
 
+--[=[
+	Get position and size of the browser window associated with this `Tab`.
+
+	Note that the returned bounds are always specified for normal (windowed)
+	state; they do not change when minimizing, maximizing or setting to
+	fullscreen.
+
+	@within Tab
+]=]
 local function getBounds(self: Tab): Browser.Bounds
 	return self.transport:callMethodOnBrowser(Browser.GetWindowForTarget, { targetId = self.targetId }).bounds
 end
 
+--[=[
+	Set position and/or size of the browser window associated with this `Tab`.
+
+	When setting the window to normal (windowed) state, unspecified fields
+	are left unchanged.
+
+	@within Tab
+]=]
 local function setBounds(self: Tab, bounds: Browser.Bounds): Tab
 	local windowId =
 		self.transport:callMethodOnBrowser(Browser.GetWindowForTarget, { targetId = self.targetId }).windowId
@@ -108,6 +162,8 @@ local function setBounds(self: Tab, bounds: Browser.Bounds): Tab
 	return self
 end
 
+--- Evaluates expression on global object.
+--- @within Tab
 local function evaluate(self: Tab, expression: string, awaitPromise: boolean?): Runtime.RemoteObject
 	return self:callMethod(Runtime.Evaluate, {
 		expression = expression,
@@ -120,6 +176,15 @@ local function evaluate(self: Tab, expression: string, awaitPromise: boolean?): 
 	}).result
 end
 
+--- Returns the title of the document.
+--- @within Tab
+local function getTitle(self: Tab): string
+	local result = self:evaluate("document.title")
+	return result.value :: string
+end
+
+--- Set cookies with tab's current URL
+--- @within Tab
 local function setCookies(self: Tab, cookies: { Network.CookieParam })
 	local url = self:getUrl()
 	local startsWithHttp = url:sub(1, 4) == "http"
@@ -139,10 +204,14 @@ local function setCookies(self: Tab, cookies: { Network.CookieParam })
 	self:callMethod(Network.SetCookies, { cookies = patchedCookies })
 end
 
+--- Returns all cookies that match the tab's current URL.
+--- @within Tab
 local function getCookies(self: Tab): { Network.Cookie }
 	return self:callMethod(Network.GetCookies, {}).cookies
 end
 
+--- Delete cookies with tab's current URL
+--- @within Tab
 local function deleteCookies(
 	self: Tab,
 	cookies: {
@@ -168,22 +237,35 @@ local function deleteCookies(
 	end
 end
 
+--- @within Tab
 local function setStorage(self: Tab, name: string, item: any)
 	local json = serde.encode("json", item)
 	local value = if typeof(item) == "string" then json else `JSON.stringify({json})`
 	self:evaluate(`localStorage.setItem("{name}", {value})`)
 end
 
-local function getStorage(self: Tab, name: string): any
-	local json = self:evaluate(`localStorage.getItem("{name}")`).value
-	local item = serde.decode("json", json :: string)
+--- @within Tab
+local function getStorage(self: Tab, name: string): any?
+	local item = self:evaluate(`localStorage.getItem("{name}")`).value
 	return item
 end
 
+--- @within Tab
 local function removeStorage(self: Tab, name: string)
 	self:evaluate(`localStorage.removeItem("{name}")`)
 end
 
+--[=[
+	Capture a screenshot of the current page.
+
+	If `clip` is given, the screenshot is taken of the specified region only.
+	`Element.getBoxModel` can be used to get regions of certains elements on the page; there is
+	also `Element.captureScreenshot` as a shorthand.
+
+	If `fromSurface` is true, the screenshot is taken from the surface rather than the view.
+
+	@within Tab
+]=]
 local function captureScreenshot(
 	self: Tab,
 	options: {
@@ -200,6 +282,7 @@ local function captureScreenshot(
 	return base64.decode(data)
 end
 
+--- @within Tab
 local function printToPdf(
 	self: Tab,
 	options: {
@@ -226,6 +309,7 @@ local function printToPdf(
 	return base64.decode(data)
 end
 
+--- @within Tab
 local function startScreencast(
 	self: Tab,
 	options: {
@@ -239,14 +323,17 @@ local function startScreencast(
 	self:callMethod(Page.StartScreencast, options)
 end
 
+--- @within Tab
 local function stopScreencast(self: Tab)
 	self:callMethod(Page.StopScreencast)
 end
 
+--- @within Tab
 local function ackScreencast(self: Tab, sessionId: number)
 	self:callMethod(Page.ScreencastFrameAck, { sessionId = sessionId })
 end
 
+--- @within Tab
 local function onScreencast(
 	self: Tab,
 	callback: (
@@ -264,20 +351,41 @@ local function onScreencast(
 	end)
 end
 
+--- Get the handle of the dialog opened in this tab.
+--- @within Tab
 local function getDialog(self: Tab): Dialog.Dialog
 	return Dialog.new(self.sessionId, self.transport)
 end
 
+--- @within Tab
 local function getDocument(self: Tab): DOM.Node
 	return self:callMethod(DOM.GetDocument, { depth = 0, pierce = false }).root
 end
 
-local function runQuerySelectorOnNode(self: Tab, nodeId: DOM.NodeId, selector: string): types.Element?
+--- Get the full HTML contents of the page.
+--- @within Tab
+local function getContent(self: Tab): string
+	local expression = [[
+		let content = "";
+        if (document.doctype)
+            content += new XMLSerializer().serializeToString(document.doctype);
+        if (document.documentElement)
+            content += document.documentElement.outerHTML;
+        return content;
+	]]
+
+	local html = self:evaluate(expression).value
+	return html :: string
+end
+
+--- @within Tab
+local function runQuerySelectorOnNode(self: Tab, nodeId: DOM.NodeId, selector: string): Element?
 	local nodeId = self:callMethod(DOM.QuerySelector, { nodeId = nodeId, selector = selector }).nodeId
 	return Element.new(self, nodeId)
 end
 
-local function runQuerySelectorAllOnNode(self: Tab, nodeId: DOM.NodeId, selector: string): { types.Element }
+--- @within Tab
+local function runQuerySelectorAllOnNode(self: Tab, nodeId: DOM.NodeId, selector: string): { Element }
 	local nodeIds = self:callMethod(DOM.QuerySelectorAll, { nodeId = nodeId, selector = selector }).nodeIds
 
 	local elements = {}
@@ -294,42 +402,53 @@ local function runQuerySelectorAllOnNode(self: Tab, nodeId: DOM.NodeId, selector
 	return elements
 end
 
-local function findElement(self: Tab, selector: string): types.Element?
+--- Returns the first element in the document which matches the given selector.
+--- Equivalent to the following JS:
+--- ```js
+--- document.querySelector(selector)
+--- ```
+--- @within Tab
+local function findElement(self: Tab, selector: string): Element?
 	local rootNodeId = self:getDocument().nodeId
 	return self:runQuerySelectorOnNode(rootNodeId, selector)
 end
 
-local function findElements(self: Tab, selector: string): { types.Element }
+--- @within Tab
+local function findElements(self: Tab, selector: string): { Element }
 	local rootNodeId = self:getDocument().nodeId
 	return self:runQuerySelectorAllOnNode(rootNodeId, selector)
 end
 
-local function waitForElement(self: Tab, selector: string, timeout: number?): types.Element
+--- @within Tab
+local function waitForElement(self: Tab, selector: string, timeout: number?): Element
 	local timeout = timeout or self.defaultTimeout
 
 	return Wait.withTimeout(timeout):pauseUntil(function()
 		local element = self:findElement(selector)
 		if element == nil then
-			return Wait.None :: any
+			return Wait.None
 		end
 
 		return element
 	end)
 end
 
-local function waitForElements(self: Tab, selector: string, timeout: number?): { types.Element }
+--- @within Tab
+local function waitForElements(self: Tab, selector: string, timeout: number?): { Element }
 	local timeout = timeout or self.defaultTimeout
 
 	return Wait.withTimeout(timeout):pauseUntil(function()
 		local elements = self:findElements(selector)
 		if #elements <= 0 then
-			return Wait.None :: any
+			return Wait.None
 		end
 
 		return elements
 	end)
 end
 
+--- Moves the mouse to this point (dispatches a mouseMoved event)
+--- @within Tab
 local function moveMouseToPoint(self: Tab, point: types.Point): Tab
 	self:callMethod(Input.DispatchMouseEvent, {
 		type = "mouseMoved",
@@ -340,6 +459,7 @@ local function moveMouseToPoint(self: Tab, point: types.Point): Tab
 	return self
 end
 
+--- @within Tab
 local function clickPoint(self: Tab, point: types.Point): Tab
 	self:moveMouseToPoint(point)
 
@@ -362,11 +482,16 @@ local function clickPoint(self: Tab, point: types.Point): Tab
 	return self
 end
 
+--- Does the same as `type_str` but it only dispatches a `keypress` and `input` event.
+--- It does not send a `keydown` or `keyup` event. What this means is that it is much faster.
+--- It is especially useful when you have a lot of text as input.
+--- @within Tab
 local function insertText(self: Tab, text: string): Tab
 	self:callMethod(Input.InsertText, { text = text })
 	return self
 end
 
+--- @within Tab
 local function typeText(self: Tab, text: string): Tab
 	for _, char in text:split("") do
 		local definition = keys.getKeyDefinition(char)
@@ -380,6 +505,10 @@ local function typeText(self: Tab, text: string): Tab
 	return self
 end
 
+--- Press a key on the keyboard, optionally with some modifier keys.
+--- See [this file](https://github.com/puppeteer/puppeteer/blob/62da2366c65b335751896afbb0206f23c61436f1/lib/USKeyboardLayout.js)
+--- for a full definition of which strings correspond with which keys.
+--- @within Tab
 local function pressKeyWithModifiers(self: Tab, key: string, modifiers: { "Alt" | "Ctrl" | "Meta" | "Shift" }?): Tab
 	local definition = keys.getKeyDefinition(key)
 	assert(definition ~= nil, "Invalid key")
@@ -424,15 +553,24 @@ local function pressKeyWithModifiers(self: Tab, key: string, modifiers: { "Alt" 
 	return self
 end
 
+--- Press a key on the keyboard. See [this file](https://github.com/puppeteer/puppeteer/blob/62da2366c65b335751896afbb0206f23c61436f1/lib/USKeyboardLayout.js)
+--- for a full definition of which strings correspond with which keys.
+--- @within Tab
 local function pressKey(self: Tab, key: string): Tab
 	return self:pressKeyWithModifiers(key)
 end
 
+--- Starts violation reporting.
+--- See <https://chromedevtools.github.io/devtools-protocol/tot/Log#method-startViolationsReport>.
+--- @within Tab
 local function startViolationsReport(self: Tab, config: { Log.ViolationSetting }): Tab
 	self:callMethod(Log.StartViolationsReport, { config = config })
 	return self
 end
 
+--- Stops violation reporting.
+--- See <https://chromedevtools.github.io/devtools-protocol/tot/Log#method-stopViolationsReport>.
+--- @within Tab
 local function stopViolationsReport(self: Tab): Tab
 	self:callMethod(Log.StopViolationsReport)
 	return self
@@ -519,6 +657,7 @@ local function bypassWebGlVendor(self: Tab)
 	})
 end
 
+--- @within Tab
 local function enableStealthMode(self: Tab)
 	bypassUserAgent(self)
 	bypassWebDriver(self)
@@ -528,6 +667,8 @@ local function enableStealthMode(self: Tab)
 	bypassWebGlVendor(self)
 end
 
+--- Closes the target Page
+--- @within Tab
 local function close(self: Tab)
 	self:callMethod(Target.CloseTarget, { targetId = self.targetId })
 end
@@ -542,6 +683,7 @@ local function handleTabLevelEvents(self: Tab)
 	end)
 end
 
+--- @within Tab
 local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport): Tab
 	local targetId = targetInfo.targetId
 	local sessionId = transport:callMethodOnBrowser(Target.AttachToTarget, { targetId = targetId }).sessionId
@@ -570,6 +712,7 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		getBounds = getBounds,
 		setBounds = setBounds,
 		evaluate = evaluate,
+		getTitle = getTitle,
 		setCookies = setCookies,
 		getCookies = getCookies,
 		deleteCookies = deleteCookies,
@@ -584,6 +727,7 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		onScreencast = onScreencast,
 		getDialog = getDialog,
 		getDocument = getDocument,
+		getContent = getContent,
 		runQuerySelectorOnNode = runQuerySelectorOnNode,
 		runQuerySelectorAllOnNode = runQuerySelectorAllOnNode,
 		findElement = findElement,

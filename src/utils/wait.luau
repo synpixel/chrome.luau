@@ -9,7 +9,7 @@ export type Wait = {
 local DEFAULT_TIMEOUT = 10
 local DEFAULT_SLEEP = 0.1
 
-local None = table.freeze({})
+local None = table.freeze({}) :: any
 
 local function pauseUntil<T>(self: Wait, predicate: () -> T): T
 	local start = os.clock()
@@ -21,7 +21,7 @@ local function pauseUntil<T>(self: Wait, predicate: () -> T): T
 		end
 
 		if os.clock() - start > self.timeout then
-			error("Wait::pauseUntil timed out")
+			error("Wait.pauseUntil timed out")
 		end
 
 		task.wait(self.sleep)
