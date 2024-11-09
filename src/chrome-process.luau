@@ -75,6 +75,7 @@ local DEFAULT_ARGS = table.freeze({
 	"--use-mock-keychain",
 })
 
+-- This does not work as `net.serve` won't throw
 local function portIsAvailable(port: number): boolean
 	local available, handle = pcall(net.serve, port, function()
 		return nil :: any
@@ -212,6 +213,7 @@ local function new(partialLaunchOptions: LaunchOptions?): ChromeProcess
 	end
 
 	if launchOptions.path == nil then
+		-- TODO: fetch
 		launchOptions.path = defaultExecutable()
 	end
 
