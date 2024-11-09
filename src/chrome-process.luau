@@ -192,17 +192,21 @@ local function getAvailablePort(): number
 end
 
 local function startProcess(launchOptions: LaunchOptions): process.SpawnResult
-	-- TODO: tempfile
-	local userDataDir = launchOptions.userDataDir
-	local userDataDirOption = if userDataDir ~= nil then `--user-data-dir={userDataDir}` else ""
+	assert(launchOptions.port ~= nil, "Port is required")
 
 	local args = {
 		`--remote-debugging-port={launchOptions.port}`,
 		"--verbose",
 		"--log-level=0",
 		"--no-first-run",
-		userDataDirOption,
 	}
+
+	local userDataDir = launchOptions.userDataDir
+	if userDataDir ~= nil then
+		table.insert(args, `--user-data-dir={userDataDir}`)
+	else
+		-- TODO: tempfile
+	end
 
 	if launchOptions.disableDefaultArgs ~= true then
 		local defaults = table.clone(DEFAULT_ARGS)
