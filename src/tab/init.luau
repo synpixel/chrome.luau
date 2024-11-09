@@ -23,7 +23,7 @@ local Log = require("../protocol/Log")
 --- @class Tab
 export type Tab = types.Tab
 
-export type Element = types.Element
+export type Element = Element.Element
 export type ElementQuad = ElementQuad.ElementQuad
 export type BoxModel = BoxModel.BoxModel
 

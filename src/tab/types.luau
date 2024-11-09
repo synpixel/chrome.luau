@@ -1,6 +1,5 @@
 local Transport = require("../transport")
 local Dialog = require("./dialog")
-local BoxModel = require("./box-model")
 local Target = require("../protocol/Target")
 local Page = require("../protocol/Page")
 local Browser = require("../protocol/Browser")
@@ -159,7 +158,7 @@ export type Element = {
 		awaitPromise: boolean?
 	) -> Runtime.RemoteObject,
 	getMidpoint: (self: Element) -> Point,
-	getBoxModel: (self: Element) -> BoxModel.BoxModel,
+	getBoxModel: (self: Element) -> BoxModel,
 	scrollIntoView: (self: Element) -> Element,
 	moveMouseOver: (self: Element) -> Element,
 	click: (self: Element) -> Element,
@@ -177,5 +176,43 @@ export type Element = {
 }
 
 export type Point = { x: number, y: number }
+
+export type ElementQuad = {
+	topLeft: Point,
+	topRight: Point,
+	bottomRight: Point,
+	bottomLeft: Point,
+	height: (self: ElementQuad) -> number,
+	width: (self: ElementQuad) -> number,
+	aspectRatio: (self: ElementQuad) -> number,
+	mostLeft: (self: ElementQuad) -> number,
+	mostRight: (self: ElementQuad) -> number,
+	mostTop: (self: ElementQuad) -> number,
+	mostBottom: (self: ElementQuad) -> number,
+	strictlyAbove: (self: ElementQuad, other: ElementQuad) -> boolean,
+	above: (self: ElementQuad, other: ElementQuad) -> boolean,
+	strictlyBelow: (self: ElementQuad, other: ElementQuad) -> boolean,
+	below: (self: ElementQuad, other: ElementQuad) -> boolean,
+	strictlyLeftOf: (self: ElementQuad, other: ElementQuad) -> boolean,
+	leftOf: (self: ElementQuad, other: ElementQuad) -> boolean,
+	strictlyRightOf: (self: ElementQuad, other: ElementQuad) -> boolean,
+	rightOf: (self: ElementQuad, other: ElementQuad) -> boolean,
+	withinHorizontalBoundsOf: (self: ElementQuad, other: ElementQuad) -> boolean,
+	withinVerticalBoundsOf: (self: ElementQuad, other: ElementQuad) -> boolean,
+	withinBoundsOf: (self: ElementQuad, other: ElementQuad) -> boolean,
+}
+
+export type BoxModel = {
+	content: ElementQuad,
+	padding: ElementQuad,
+	border: ElementQuad,
+	margin: ElementQuad,
+	width: number,
+	height: number,
+	contentViewport: (self: BoxModel) -> Page.Viewport,
+	paddingViewport: (self: BoxModel) -> Page.Viewport,
+	borderViewport: (self: BoxModel) -> Page.Viewport,
+	marginViewport: (self: BoxModel) -> Page.Viewport,
+}
 
 return nil

@@ -39,12 +39,9 @@ export type Element = types.Element
 --- @prop value string
 --- @within Element
 
-type Tab = types.Tab
-type BoxModel = BoxModel.BoxModel
-
 local DEFAULT_TIMEOUT = 3
 
-local function extractMidpoint(remoteObject: Runtime.RemoteObject): types.Point
+local function extractMidpoint(remoteObject: Runtime.RemoteObject): { x: number, y: number }
 	if remoteObject.preview == nil then
 		return { x = 0, y = 0 }
 	end
@@ -209,7 +206,7 @@ end
 
 --- Get boxes for this element
 --- @within Element
-local function getBoxModel(self: Element): BoxModel
+local function getBoxModel(self: Element): BoxModel.BoxModel
 	local model = self.parent:callMethod(DOM.GetBoxModel, { backendNodeId = self.backendNodeId }).model
 	return BoxModel.new({
 		content = ElementQuad.fromRawPoints(model.content),
@@ -317,7 +314,7 @@ end
 --- the "backendNodeId" and "remoteObjectId" which are stable identifiers, unlike nodeId.
 --- We use these two when making various calls to the API because of that.
 --- @within Element
-local function new(parent: Tab, nodeId: DOM.NodeId): Element?
+local function new(parent: types.Tab, nodeId: DOM.NodeId): Element?
 	if nodeId == 0 then
 		return nil
 	end

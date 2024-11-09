@@ -1,19 +1,8 @@
-local ElementQuad = require("./element-quad")
+local types = require("./types")
 local Page = require("../protocol/Page")
 
 --- @class BoxModel
-export type BoxModel = {
-	content: ElementQuad.ElementQuad,
-	padding: ElementQuad.ElementQuad,
-	border: ElementQuad.ElementQuad,
-	margin: ElementQuad.ElementQuad,
-	width: number,
-	height: number,
-	contentViewport: (self: BoxModel) -> Page.Viewport,
-	paddingViewport: (self: BoxModel) -> Page.Viewport,
-	borderViewport: (self: BoxModel) -> Page.Viewport,
-	marginViewport: (self: BoxModel) -> Page.Viewport,
-}
+export type BoxModel = types.BoxModel
 
 --- Create a `Page.Viewport` equal to the content-box, using a scale of 1.0
 --- @within BoxModel
@@ -65,10 +54,10 @@ end
 
 --- @within BoxModel
 local function new(boxModel: {
-	content: ElementQuad.ElementQuad,
-	padding: ElementQuad.ElementQuad,
-	border: ElementQuad.ElementQuad,
-	margin: ElementQuad.ElementQuad,
+	content: types.ElementQuad,
+	padding: types.ElementQuad,
+	border: types.ElementQuad,
+	margin: types.ElementQuad,
 	width: number,
 	height: number,
 }): BoxModel

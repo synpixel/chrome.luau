@@ -1,30 +1,7 @@
-type Point = { x: number, y: number }
+local types = require("./types")
 
 --- @class ElementQuad
-export type ElementQuad = {
-	topLeft: Point,
-	topRight: Point,
-	bottomRight: Point,
-	bottomLeft: Point,
-	height: (self: ElementQuad) -> number,
-	width: (self: ElementQuad) -> number,
-	aspectRatio: (self: ElementQuad) -> number,
-	mostLeft: (self: ElementQuad) -> number,
-	mostRight: (self: ElementQuad) -> number,
-	mostTop: (self: ElementQuad) -> number,
-	mostBottom: (self: ElementQuad) -> number,
-	strictlyAbove: (self: ElementQuad, other: ElementQuad) -> boolean,
-	above: (self: ElementQuad, other: ElementQuad) -> boolean,
-	strictlyBelow: (self: ElementQuad, other: ElementQuad) -> boolean,
-	below: (self: ElementQuad, other: ElementQuad) -> boolean,
-	strictlyLeftOf: (self: ElementQuad, other: ElementQuad) -> boolean,
-	leftOf: (self: ElementQuad, other: ElementQuad) -> boolean,
-	strictlyRightOf: (self: ElementQuad, other: ElementQuad) -> boolean,
-	rightOf: (self: ElementQuad, other: ElementQuad) -> boolean,
-	withinHorizontalBoundsOf: (self: ElementQuad, other: ElementQuad) -> boolean,
-	withinVerticalBoundsOf: (self: ElementQuad, other: ElementQuad) -> boolean,
-	withinBoundsOf: (self: ElementQuad, other: ElementQuad) -> boolean,
-}
+export type ElementQuad = types.ElementQuad
 
 --- @within ElementQuad
 local function height(self: ElementQuad): number
