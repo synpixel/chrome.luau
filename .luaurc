@@ -1,6 +1,3 @@
 {
-  "languageMode": "strict",
-  "aliases": {
-    "pkg": "lune_packages"
-  }
+  "languageMode": "strict"
 }
