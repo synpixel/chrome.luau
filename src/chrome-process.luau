@@ -201,9 +201,8 @@ local function startProcess(launchOptions: LaunchOptions): process.SpawnResult
 		"--no-first-run",
 	}
 
-	local userDataDir = launchOptions.userDataDir
-	if userDataDir ~= nil then
-		table.insert(args, `--user-data-dir={userDataDir}`)
+	if launchOptions.userDataDir ~= nil then
+		table.insert(args, `--user-data-dir={launchOptions.userDataDir}`)
 	else
 		-- TODO: tempfile
 	end
