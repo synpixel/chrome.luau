@@ -4,7 +4,7 @@ description = "A port of rust-headless-chrome to Luau, built for Lune"
 authors = ["synpixel"]
 license = "MIT"
 repository = "https://github.com/synpixel/chrome.luau"
-includes = ["pesde.toml", "README.md", "LICENSE", "src"]
+includes = ["pesde.toml", "README.md", "LICENSE", "docs", "src"]
 
 [target]
 environment = "lune"
