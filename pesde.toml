@@ -8,6 +8,7 @@ includes = ["pesde.toml", "README.md", "LICENSE", "docs", "src"]
 
 [target]
 environment = "lune"
+lib = "src/init.luau"
 
 [scripts]
 build = "scripts/build.luau"
