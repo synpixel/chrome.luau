@@ -1,4 +1,4 @@
-# chrome.luau
+# Chrome
 
 This package is a port of [rust-headless-chrome](https://github.com/rust-headless-chrome/rust-headless-chrome) to Luau, built for Lune.
 
