@@ -76,7 +76,7 @@ local DEFAULT_ARGS = table.freeze({
 })
 
 local function which(binaryName: string): string?
-	local path = process.env.path
+	local path = process.env.PATH
 	if path == nil then
 		return nil
 	end
