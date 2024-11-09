@@ -16,7 +16,7 @@ local tempfile = require("./utils/tempfile")
 --- .port number? -- Launch the browser with a specific debugging port.
 --- .ignoreCertificateErrors boolean? -- Determines whether SSL certificates should be verified. This is unsafe and can lead to MiTM attacks. This is unsafe and can lead to MiTM attacks. Make sure you understand the risks.
 --- .path string? -- Path for Chrome or Chromium. If unspecified, the create will try to automatically detect a suitable binary.
---- .userDataDir string? -- User Data (Profile) to use.
+--- .userDataDir string? -- User Data (Profile) to use. If unspecified, a new temp directory is created and used on every launch.
 --- .extensions { string }? -- A list of Chrome extensions to load. An extension should be a path to a folder containing the extension code. CRX files cannot be used directly and must be first extracted. Note that Chrome does not support loading extensions in headless-mode.
 --- .args { string }? -- Additional arguments to pass to the browser instance. The list of Chromium flags can be found: <http://peter.sh/experiments/chromium-command-line-switches/>.
 --- .ignoreDefaultArgs { string }? -- Ignore a default given flag.

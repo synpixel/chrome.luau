@@ -249,6 +249,7 @@ local function connect(websocketUrl: string): Browser
 end
 
 --- Launch a new Chrome browser.
+--- The browser will have its user data (aka "profile") directory stored in a temporary directory.
 --- @within Browser
 local function new(launchOptions: ChromeProcess.LaunchOptions?): Browser
 	local chromeProcess = ChromeProcess.new(launchOptions)
