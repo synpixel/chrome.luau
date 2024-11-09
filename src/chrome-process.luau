@@ -2,6 +2,7 @@ local process = require("@lune/process")
 local fs = require("@lune/fs")
 local net = require("@lune/net")
 local serde = require("@lune/serde")
+local tempfile = require("./utils/tempfile")
 
 --- Represents the way in which Chrome is run. By default it will search for a Chrome
 --- binary on the system, use an available port for debugging, and start in headless mode.
@@ -204,7 +205,8 @@ local function startProcess(launchOptions: LaunchOptions): process.SpawnResult
 	if launchOptions.userDataDir ~= nil then
 		table.insert(args, `--user-data-dir={launchOptions.userDataDir}`)
 	else
-		-- TODO: tempfile
+		local userDataDir = tempfile("chrome-luau-profile")
+		table.insert(args, `--user-data-dir={userDataDir}`)
 	end
 
 	if launchOptions.disableDefaultArgs ~= true then
