@@ -1,6 +1,14 @@
 # chrome.luau
 
-A port of [rust-headless-chrome](https://github.com/rust-headless-chrome/rust-headless-chrome) to Luau, built for Lune
+This package is a port of [rust-headless-chrome](https://github.com/rust-headless-chrome/rust-headless-chrome) to Luau, built for Lune.
+
+## Installation
+
+### pesde
+
+```sh
+pesde add synpixel/chrome
+```
 
 ## Quick Start
 
