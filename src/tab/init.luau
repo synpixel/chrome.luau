@@ -586,7 +586,7 @@ local function bypassUserAgent(self: Tab)
 
 	userAgent = userAgent:gsub("HeadlessChrome/", "Chrome/")
 
-	local regex = Regex.new("(([^)]+))")
+	local regex = Regex.new([[\(([^)]+)\)]])
 	userAgent = regex:replace(userAgent, "(Windows NT 10.0; Win64; x64)")
 
 	self:setUserAgent(userAgent)
