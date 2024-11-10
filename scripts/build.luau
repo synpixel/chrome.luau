@@ -187,38 +187,68 @@ local function writeDomainDefinition(domain: DomainDefinition): string
 	return if FORMAT then stylua(file) else file
 end
 
-local function writeRootFile(...: ProtocolDefinition): string
+local function writeMethodFile(...: ProtocolDefinition): string
 	local definitions = { ... }
 	local file = ""
 
 	for _, definition in definitions do
 		for _, domain in definition.domains do
+			if domain.commands == nil then
+				continue
+			end
 			file ..= `local {domain.domain} = require("./{domain.domain}")\n`
 		end
 	end
 
-	-- We don't need this for now
-	--[[
+	file ..= "return table.freeze({"
+
 	for _, definition in definitions do
 		for _, domain in definition.domains do
-			if domain.types ~= nil then
-				for _, type in domain.types do
-					file ..= `export type {domain.domain}{type.id} = {domain.domain}.{type.id}\n`
-				end
+			if domain.commands == nil then
+				continue
+			end
+
+			for _, command in domain.commands do
+				local pascalName = command.name:sub(1, 1):upper() .. command.name:sub(2)
+				file ..= `{domain.domain}{pascalName} = {domain.domain}.{pascalName},`
 			end
 		end
 	end
-	]]
 
-	file ..= "return {"
+	file ..= "})"
+
+	return if FORMAT then stylua(file) else file
+end
+
+local function writeEventFile(...: ProtocolDefinition): string
+	local definitions = { ... }
+	local file = ""
 
 	for _, definition in definitions do
 		for _, domain in definition.domains do
-			file ..= `{domain.domain} = {domain.domain},`
+			if domain.events == nil then
+				continue
+			end
+			file ..= `local {domain.domain} = require("./{domain.domain}")\n`
 		end
 	end
 
-	file ..= "}"
+	file ..= "return table.freeze({"
+
+	for _, definition in definitions do
+		for _, domain in definition.domains do
+			if domain.events == nil then
+				continue
+			end
+
+			for _, event in domain.events do
+				local pascalName = event.name:sub(1, 1):upper() .. event.name:sub(2)
+				file ..= `{domain.domain}{pascalName} = {domain.domain}.{pascalName},`
+			end
+		end
+	end
+
+	file ..= "})"
 
 	return if FORMAT then stylua(file) else file
 end
@@ -247,8 +277,15 @@ for _, domain in jsDefinition.domains do
 end
 
 do
-	local file = writeRootFile(browserDefinition, jsDefinition)
-	fs.writeFile(`{OUT}/init.luau`, file)
+	local file = writeMethodFile(browserDefinition, jsDefinition)
+	fs.writeFile(`{OUT}/method.luau`, file)
 
-	print(log:format("Root", "init"))
+	print(log:format("Method", "method"))
+end
+
+do
+	local file = writeEventFile(browserDefinition, jsDefinition)
+	fs.writeFile(`{OUT}/event.luau`, file)
+
+	print(log:format("Event", "event"))
 end
