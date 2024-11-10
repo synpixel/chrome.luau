@@ -73,11 +73,12 @@ end
 local function getAttributeValue(self: Element, name: string): string?
 	local jsFunction = `function() \{ return this.getAttribute("{name}"); \}`
 
-	local json = self:callJsFunction(jsFunction, nil, true).value
-	if json == nil then
+	local value = self:callJsFunction(jsFunction, nil, true).value
+	if value == nil then
 		return nil
 	end
-	return serde.decode("json", json)
+
+	return value :: string
 end
 
 --[=[
