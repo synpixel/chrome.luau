@@ -421,9 +421,58 @@ local function findElement(self: Tab, selector: string): Element?
 end
 
 --- @within Tab
+local function findElementByXPath(self: Tab, query: string): Element?
+	self:getDocument()
+
+	local search = self:callMethod(DOM.PerformSearch, { query = query })
+	if search.resultCount <= 0 then
+		return nil
+	end
+
+	local results = self:callMethod(DOM.GetSearchResults, {
+		searchId = search.searchId,
+		fromIndex = 0,
+		toIndex = search.resultCount,
+	})
+
+	local nodeId = results.nodeIds[1]
+	return Element.new(self, nodeId)
+end
+
+--- @within Tab
 local function findElements(self: Tab, selector: string): { Element }
 	local rootNodeId = self:getDocument().nodeId
 	return self:runQuerySelectorAllOnNode(rootNodeId, selector)
+end
+
+--- @within Tab
+local function findElementsByXPath(self: Tab, query: string): { Element }
+	self:getDocument()
+
+	local search = self:callMethod(DOM.PerformSearch, { query = query })
+	if search.resultCount <= 0 then
+		return {}
+	end
+
+	local results = self:callMethod(DOM.GetSearchResults, {
+		searchId = search.searchId,
+		fromIndex = 0,
+		toIndex = search.resultCount,
+	})
+
+	local nodeIds = results.nodeIds
+	local elements = {}
+
+	for _, nodeId in nodeIds do
+		local element = Element.new(self, nodeId)
+		if element == nil then
+			continue
+		end
+
+		table.insert(elements, element)
+	end
+
+	return elements
 end
 
 --- @within Tab
@@ -441,11 +490,39 @@ local function waitForElement(self: Tab, selector: string, timeout: number?): El
 end
 
 --- @within Tab
+local function waitForXPath(self: Tab, selector: string, timeout: number?): Element
+	local timeout = timeout or self.defaultTimeout
+
+	return Wait.withTimeout(timeout):pauseUntil(function()
+		local element = self:findElementByXPath(selector)
+		if element == nil then
+			return Wait.None
+		end
+
+		return element
+	end)
+end
+
+--- @within Tab
 local function waitForElements(self: Tab, selector: string, timeout: number?): { Element }
 	local timeout = timeout or self.defaultTimeout
 
 	return Wait.withTimeout(timeout):pauseUntil(function()
 		local elements = self:findElements(selector)
+		if #elements <= 0 then
+			return Wait.None
+		end
+
+		return elements
+	end)
+end
+
+--- @within Tab
+local function waitForElementsByXPath(self: Tab, selector: string, timeout: number?): { Element }
+	local timeout = timeout or self.defaultTimeout
+
+	return Wait.withTimeout(timeout):pauseUntil(function()
+		local elements = self:findElementsByXPath(selector)
 		if #elements <= 0 then
 			return Wait.None
 		end
@@ -739,9 +816,13 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		runQuerySelectorOnNode = runQuerySelectorOnNode,
 		runQuerySelectorAllOnNode = runQuerySelectorAllOnNode,
 		findElement = findElement,
+		findElementByXPath = findElementByXPath,
 		findElements = findElements,
+		findElementsByXPath = findElementsByXPath,
 		waitForElement = waitForElement,
+		waitForXPath = waitForXPath,
 		waitForElements = waitForElements,
+		waitForElementsByXPath = waitForElementsByXPath,
 		moveMouseToPoint = moveMouseToPoint,
 		clickPoint = clickPoint,
 		insertText = insertText,
