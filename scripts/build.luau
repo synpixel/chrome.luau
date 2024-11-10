@@ -197,6 +197,8 @@ local function writeRootFile(...: ProtocolDefinition): string
 		end
 	end
 
+	-- We don't need this for now
+	--[[
 	for _, definition in definitions do
 		for _, domain in definition.domains do
 			if domain.types ~= nil then
@@ -206,6 +208,7 @@ local function writeRootFile(...: ProtocolDefinition): string
 			end
 		end
 	end
+	]]
 
 	file ..= "return {"
 
