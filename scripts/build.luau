@@ -187,6 +187,39 @@ local function writeDomainDefinition(domain: DomainDefinition): string
 	return if FORMAT then stylua(file) else file
 end
 
+local function writeRootFile(...: ProtocolDefinition): string
+	local definitions = { ... }
+	local file = ""
+
+	for _, definition in definitions do
+		for _, domain in definition.domains do
+			file ..= `local {domain.domain} = require("./{domain.domain}")\n`
+		end
+	end
+
+	for _, definition in definitions do
+		for _, domain in definition.domains do
+			if domain.types ~= nil then
+				for _, type in domain.types do
+					file ..= `export type {domain.domain}{type.id} = {domain.domain}.{type.id}\n`
+				end
+			end
+		end
+	end
+
+	file ..= "return {"
+
+	for _, definition in definitions do
+		for _, domain in definition.domains do
+			file ..= `{domain.domain} = {domain.domain},`
+		end
+	end
+
+	file ..= "}"
+
+	return if FORMAT then stylua(file) else file
+end
+
 local browserDefinition = readJson(`{IN}/browser_protocol.json`) :: ProtocolDefinition
 local jsDefinition = readJson(`{IN}/js_protocol.json`) :: ProtocolDefinition
 
@@ -194,21 +227,25 @@ if fs.isDir(OUT) == false then
 	fs.writeDir(OUT)
 end
 
-local domainLog =
-	`{stdio.color("cyan")}<domain>{stdio.color("reset")} {stdio.style("dim")}>{stdio.style("reset")} {OUT}/<domain>.luau`
+local log = `{stdio.color("cyan")}%s{stdio.color("reset")} {stdio.style("dim")}>{stdio.style("reset")} {OUT}/%s.luau`
 
 for _, domain in browserDefinition.domains do
 	local file = writeDomainDefinition(domain)
 	fs.writeFile(`{OUT}/{domain.domain}.luau`, file)
 
-	local log = domainLog:gsub("<domain>", domain.domain)
-	print(log)
+	print(log:format(domain.domain, domain.domain))
 end
 
 for _, domain in jsDefinition.domains do
 	local file = writeDomainDefinition(domain)
 	fs.writeFile(`{OUT}/{domain.domain}.luau`, file)
 
-	local log = domainLog:gsub("<domain>", domain.domain)
-	print(log)
+	print(log:format(domain.domain, domain.domain))
+end
+
+do
+	local file = writeRootFile(browserDefinition, jsDefinition)
+	fs.writeFile(`{OUT}/init.luau`, file)
+
+	print(log:format("Root", "init"))
 end

@@ -2,6 +2,7 @@ local ChromeProcess = require("./chrome-process")
 local Browser = require("./browser")
 local Tab = require("./tab")
 local Wait = require("./utils/wait")
+local protocol = require("./protocol")
 
 export type LaunchOptions = ChromeProcess.LaunchOptions
 export type Browser = Browser.Browser
@@ -13,4 +14,5 @@ export type BoxModel = Tab.BoxModel
 return {
 	Browser = Browser,
 	Wait = Wait,
+	protocol = protocol,
 }
