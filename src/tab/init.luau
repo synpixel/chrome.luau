@@ -43,6 +43,7 @@ local function getUrl(self: Tab): string
 end
 
 --- Set default timeout for the tab
+--- This will be applied to all `waitForElement` and `waitForElements` calls without a timeout for this tab
 --- @within Tab
 local function setDefaultTimeout(self: Tab, timeout: number): Tab
 	self.defaultTimeout = timeout
