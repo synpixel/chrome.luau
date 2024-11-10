@@ -27,7 +27,7 @@ tab:navigateTo("https://www.wikipedia.org"):waitUntilNavigated()
 tab:waitForElement("input#searchInput"):click()
 
 -- Type in a query and press `Enter`
-tab:typeText("WebKit"):pressKey("Enter"):waitUntilNavigated()
+tab:typeText("WebKit"):pressKey("Enter"):waitUntilRedirect()
 
 -- We should end up on the WebKit-page once navigated
 local element = tab:waitForElement("#firstHeading")
