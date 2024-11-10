@@ -495,7 +495,7 @@ end
 --- @within Tab
 local function typeText(self: Tab, text: string): Tab
 	for _, char in text:split("") do
-		local definition = keys.getKeyDefinition(char)
+		local definition = keys.getKeyDefinition(char :: keys.Key)
 		if definition ~= nil then
 			self:pressKey(definition.key)
 		else
@@ -510,7 +510,7 @@ end
 --- See [this file](https://github.com/puppeteer/puppeteer/blob/62da2366c65b335751896afbb0206f23c61436f1/lib/USKeyboardLayout.js)
 --- for a full definition of which strings correspond with which keys.
 --- @within Tab
-local function pressKeyWithModifiers(self: Tab, key: string, modifiers: { "Alt" | "Ctrl" | "Meta" | "Shift" }?): Tab
+local function pressKeyWithModifiers(self: Tab, key: keys.Key, modifiers: { "Alt" | "Ctrl" | "Meta" | "Shift" }?): Tab
 	local definition = keys.getKeyDefinition(key)
 	assert(definition ~= nil, "Invalid key")
 
@@ -557,7 +557,7 @@ end
 --- Press a key on the keyboard. See [this file](https://github.com/puppeteer/puppeteer/blob/62da2366c65b335751896afbb0206f23c61436f1/lib/USKeyboardLayout.js)
 --- for a full definition of which strings correspond with which keys.
 --- @within Tab
-local function pressKey(self: Tab, key: string): Tab
+local function pressKey(self: Tab, key: keys.Key): Tab
 	return self:pressKeyWithModifiers(key)
 end
 

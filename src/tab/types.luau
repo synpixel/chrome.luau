@@ -1,5 +1,6 @@
 local Transport = require("../transport")
 local Dialog = require("./dialog")
+local keys = require("./keys")
 local Target = require("../protocol/Target")
 local Page = require("../protocol/Page")
 local Browser = require("../protocol/Browser")
@@ -126,8 +127,8 @@ export type Tab = {
 	clickPoint: (self: Tab, point: Point) -> Tab,
 	insertText: (self: Tab, text: string) -> Tab,
 	typeText: (self: Tab, text: string) -> Tab,
-	pressKeyWithModifiers: (self: Tab, key: string, modifiers: { "Alt" | "Ctrl" | "Meta" | "Shift" }?) -> Tab,
-	pressKey: (self: Tab, key: string) -> Tab,
+	pressKeyWithModifiers: (self: Tab, key: keys.Key, modifiers: { "Alt" | "Ctrl" | "Meta" | "Shift" }?) -> Tab,
+	pressKey: (self: Tab, key: keys.Key) -> Tab,
 	startViolationsReport: (self: Tab, config: { Log.ViolationSetting }) -> Tab,
 	stopViolationsReport: (self: Tab) -> Tab,
 	enableStealthMode: (self: Tab) -> (),
