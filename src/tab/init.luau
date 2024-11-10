@@ -126,8 +126,8 @@ end
 
 --- @within Tab
 local function waitUntilNavigated(self: Tab): Tab
-	Wait.withTimeout(20):pauseUntil(function()
-		return if self.navigating then Wait.None else true
+	Wait.withTimeout(self.defaultTimeout):pauseUntil(function()
+		return if self.navigating then Wait.None else nil
 	end)
 
 	return self
