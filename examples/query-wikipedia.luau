@@ -11,7 +11,12 @@ local function query(input: string)
 	tab:navigateTo("https://en.wikipedia.org"):waitUntilNavigated():waitForElement("input#searchInput"):click()
 	tab:typeText(input):pressKey("Enter"):waitUntilRedirect()
 
-	local shortDescription = tab:waitForElement("div.shortdescription")
+	local shortDescription = tab:findElement("div.shortdescription")
+	if shortDescription == nil then
+		print("No shortdescription-node found on page")
+		return
+	end
+
 	print(`Result for {input}: {shortDescription:getInnerText()}`)
 
 	tab:close()
