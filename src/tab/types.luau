@@ -45,6 +45,7 @@ export type Tab = {
 	stopLoading: (self: Tab) -> (),
 	navigateTo: (self: Tab, url: string) -> Tab,
 	waitUntilNavigated: (self: Tab) -> Tab,
+	waitUntilRedirect: (self: Tab) -> Tab,
 	getBounds: (self: Tab) -> Browser.Bounds,
 	setBounds: (self: Tab, bounds: Browser.Bounds) -> Tab,
 	evaluate: (self: Tab, expression: string, awaitPromise: boolean?) -> Runtime.RemoteObject,

@@ -133,6 +133,12 @@ local function waitUntilNavigated(self: Tab): Tab
 	return self
 end
 
+--- @within Tab
+local function waitUntilRedirect(self: Tab): Tab
+	self.navigating = true
+	return self:waitUntilNavigated()
+end
+
 --[=[
 	Get position and size of the browser window associated with this `Tab`.
 
@@ -710,6 +716,7 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		stopLoading = stopLoading,
 		navigateTo = navigateTo,
 		waitUntilNavigated = waitUntilNavigated,
+		waitUntilRedirect = waitUntilRedirect,
 		getBounds = getBounds,
 		setBounds = setBounds,
 		evaluate = evaluate,
