@@ -1,5 +1,5 @@
 name = "synpixel/chrome"
-version = "0.1.6"
+version = "0.2.0"
 description = "A port of rust-headless-chrome to Luau, built for Lune"
 authors = ["synpixel"]
 license = "MIT"
