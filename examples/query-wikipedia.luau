@@ -1,6 +1,6 @@
 local chrome = require("../src")
 
-local browser = chrome.Browser.new({ headless = false })
+local browser = chrome.Browser.new()
 
 local function query(input: string)
 	local tab = browser:newTab()
