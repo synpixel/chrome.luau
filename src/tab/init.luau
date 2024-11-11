@@ -575,7 +575,7 @@ local function clickPoint(self: Tab, point: types.Point): Tab
 	return self
 end
 
---- Does the same as `type_str` but it only dispatches a `keypress` and `input` event.
+--- Does the same as `typeText` but it only dispatches a `keypress` and `input` event.
 --- It does not send a `keydown` or `keyup` event. What this means is that it is much faster.
 --- It is especially useful when you have a lot of text as input.
 --- @within Tab
