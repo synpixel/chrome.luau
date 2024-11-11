@@ -716,14 +716,16 @@ end
 
 --- Enables debugger domain.
 --- @within Tab
-local function enableDebugger(self: Tab)
+local function enableDebugger(self: Tab): Tab
 	self:callMethod(Debugger.Enable, {})
+	return self
 end
 
 --- Disables debugger domain.
 --- @within Tab
-local function disableDebugger(self: Tab)
+local function disableDebugger(self: Tab): Tab
 	self:callMethod(Debugger.Disable)
+	return self
 end
 
 --- Returns source for the script with given id.
