@@ -258,7 +258,7 @@ local function getStorage(self: Tab, name: string): any?
 		return nil
 	end
 
-	local success, item = pcall(serde.decode, "json" :: serde.EncodeDecodeFormat, result.value :: string)
+	local success, item = pcall(serde.decode, "json" :: any, result.value :: string)
 	if success then
 		return item
 	end
