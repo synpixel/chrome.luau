@@ -715,9 +715,9 @@ local function bypassPlugins(self: Tab)
 	local source = [[
 		Object.defineProperty(navigator, "plugins", {
 			get: () => [
-            	{filename: "internal-pdf-viewer"},
-            	{filename: "adsfkjlkjhalkh"},
-            	{filename: "internal-nacl-plugin"},
+            	{ filename: "internal-pdf-viewer" },
+            	{ filename: "adsfkjlkjhalkh" },
+            	{ filename: "internal-nacl-plugin" },
           	],
 		});
 	]]
