@@ -17,6 +17,7 @@ local Network = require("../protocol/Network")
 local DOM = require("../protocol/DOM")
 local Input = require("../protocol/Input")
 local Log = require("../protocol/Log")
+local Debugger = require("../protocol/Debugger")
 
 --- A handle to a single page. Exposes methods for simulating user actions (clicking,
 --- typing), and also for getting information about the DOM and other parts of the page.
@@ -635,6 +636,24 @@ local function pressKey(self: Tab, key: keys.Key): Tab
 	return self:pressKeyWithModifiers(key)
 end
 
+--- Enables log domain.
+--- Sends the entries collected so far to the client by means of the entryAdded notification.
+--- See <https://chromedevtools.github.io/devtools-protocol/tot/Log#method-enable>.
+--- @within Tab
+local function enableLog(self: Tab): Tab
+	self:callMethod(Log.Enable)
+	return self
+end
+
+--- Disables log domain.
+--- Prevents further log entries from being reported to the client.
+--- See <https://chromedevtools.github.io/devtools-protocol/tot/Log#method-disable>.
+--- @within Tab
+local function disableLog(self: Tab): Tab
+	self:callMethod(Log.Disable)
+	return self
+end
+
 --- Starts violation reporting.
 --- See <https://chromedevtools.github.io/devtools-protocol/tot/Log#method-startViolationsReport>.
 --- @within Tab
@@ -649,6 +668,39 @@ end
 local function stopViolationsReport(self: Tab): Tab
 	self:callMethod(Log.StopViolationsReport)
 	return self
+end
+
+--- Enables runtime domain.
+--- @within Tab
+local function enableRuntime(self: Tab): Tab
+	self:callMethod(Runtime.Enable)
+	return self
+end
+
+--- Disables runtime domain.
+--- @within Tab
+local function disableRuntime(self: Tab): Tab
+	self:callMethod(Runtime.Disable)
+	return self
+end
+
+--- Enables debugger domain.
+--- @within Tab
+local function enableDebugger(self: Tab)
+	self:callMethod(Debugger.Enable, {})
+end
+
+--- Disables debugger domain.
+--- @within Tab
+local function disableDebugger(self: Tab)
+	self:callMethod(Debugger.Disable)
+end
+
+--- Returns source for the script with given id.
+--- Debugger domain must be enabled.
+--- @within Tab
+local function getScriptSource(self: Tab, scriptId: string): string
+	return self:callMethod(Debugger.GetScriptSource, { scriptId = scriptId }).scriptSource
 end
 
 local function bypassUserAgent(self: Tab)
@@ -819,8 +871,15 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		typeText = typeText,
 		pressKeyWithModifiers = pressKeyWithModifiers,
 		pressKey = pressKey,
+		enableLog = enableLog,
+		disableLog = disableLog,
 		startViolationsReport = startViolationsReport,
 		stopViolationsReport = stopViolationsReport,
+		enableRuntime = enableRuntime,
+		disableRuntime = disableRuntime,
+		enableDebugger = enableDebugger,
+		disableDebugger = disableDebugger,
+		getScriptSource = getScriptSource,
 		enableStealthMode = enableStealthMode,
 		close = close,
 	}
