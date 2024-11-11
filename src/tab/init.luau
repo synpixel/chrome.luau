@@ -98,6 +98,29 @@ local function setExtraHttpHeaders(self: Tab, headers: { [string]: string })
 	self:callMethod(Network.SetExtraHTTPHeaders, { headers = headers })
 end
 
+--- If enabled, instead of using the GUI to select files, the browser will
+--- wait for the `handleFileChooser` method to be called.
+--- \**WARNING**: Only works on Chromium / Chrome 77 and above.
+--- @within Tab
+local function setFileChooserDialogInterception(self: Tab, enabled: boolean)
+	self:callMethod(Page.SetInterceptFileChooserDialog, { enabled = enabled })
+end
+
+--[=[
+	Will have the same effect as choosing these files from the file chooser dialog that would've
+	popped up had `set_file_chooser_dialog_interception` not been called. Calls to this method
+	must be preceded by calls to that method.
+
+	Supports selecting files or closing the file chooser dialog.
+
+	NOTE: the filepaths listed in `files` must be absolute.
+
+	@within Tab
+]=]
+local function handleFileChooser(self: Tab, files: { string }, nodeId: number)
+	self:callMethod(DOM.SetFileInputFiles, { files = files, nodeId = nodeId })
+end
+
 --- Pulls focus to this tab
 --- @within Tab
 local function bringToFront(self: Tab)
@@ -838,6 +861,8 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		getBrowserContextId = getBrowserContextId,
 		setUserAgent = setUserAgent,
 		setExtraHttpHeaders = setExtraHttpHeaders,
+		setFileChooserDialogInterception = setFileChooserDialogInterception,
+		handleFileChooser = handleFileChooser,
 		bringToFront = bringToFront,
 		reload = reload,
 		stopLoading = stopLoading,
