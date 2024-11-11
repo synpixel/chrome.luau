@@ -82,7 +82,7 @@ local function which(binaryName: string): string?
 		return nil
 	end
 
-	for dir in path:gmatch("(.-);") do
+	for _, dir in path:split(";") do
 		if fs.isDir(dir) == false then
 			continue
 		end
