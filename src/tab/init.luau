@@ -349,24 +349,6 @@ local function ackScreencast(self: Tab, sessionId: number)
 	self:callMethod(Page.ScreencastFrameAck, { sessionId = sessionId })
 end
 
---- @within Tab
-local function onScreencast(
-	self: Tab,
-	callback: (
-		frame: { data: buffer, metadata: Page.ScreencastFrameMetadata, sessionId: number }
-	) -> ()
-): () -> ()
-	return self:addEventListener(Page.ScreencastFrame, function(frame)
-		local data = buffer.fromstring(frame.data)
-
-		callback({
-			data = base64.decode(data),
-			metadata = frame.metadata,
-			sessionId = frame.sessionId,
-		})
-	end)
-end
-
 --- Get the handle of the dialog opened in this tab.
 --- @within Tab
 local function getDialog(self: Tab): Dialog.Dialog
@@ -818,7 +800,6 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		startScreencast = startScreencast,
 		stopScreencast = stopScreencast,
 		ackScreencast = ackScreencast,
-		onScreencast = onScreencast,
 		getDialog = getDialog,
 		getDocument = getDocument,
 		getContent = getContent,

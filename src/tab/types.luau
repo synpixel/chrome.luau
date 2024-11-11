@@ -111,10 +111,6 @@ export type Tab = {
 	) -> (),
 	stopScreencast: (self: Tab) -> (),
 	ackScreencast: (self: Tab, sessionId: number) -> (),
-	onScreencast: (
-		self: Tab,
-		callback: (frame: { data: buffer, metadata: Page.ScreencastFrameMetadata, sessionId: number }) -> ()
-	) -> () -> (),
 	getDialog: (self: Tab) -> Dialog.Dialog,
 	getDocument: (self: Tab) -> DOM.Node,
 	getContent: (self: Tab) -> string,
