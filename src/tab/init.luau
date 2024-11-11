@@ -757,7 +757,7 @@ end
 	Equivalent to hitting the record button in the "coverage" tab in Chrome DevTools.
 
 	By default we enable the 'detailed' flag on StartPreciseCoverage, which enables block-level
-	granularity, and also enable 'call_count' (which when disabled always sets count to 1 or 0).
+	granularity, and also enable 'callCount' (which when disabled always sets count to 1 or 0).
 
 	@within Tab
 ]=]
@@ -767,7 +767,7 @@ local function startJsCoverage(self: Tab): Tab
 end
 
 --- Stops tracking which lines of JS have been executed.
---- If you're finished with the profiler, don't forget to call `disable_profiler`.
+--- If you're finished with the profiler, don't forget to call `disableProfiler`.
 --- @within Tab
 local function stopJsCoverage(self: Tab): Tab
 	self:callMethod(Profiler.StopPreciseCoverage)
