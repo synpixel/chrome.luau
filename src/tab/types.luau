@@ -8,6 +8,7 @@ local Runtime = require("../protocol/Runtime")
 local Network = require("../protocol/Network")
 local DOM = require("../protocol/DOM")
 local Log = require("../protocol/Log")
+local Profiler = require("../protocol/Profiler")
 
 export type Tab = {
 	targetId: string,
@@ -142,6 +143,11 @@ export type Tab = {
 	enableDebugger: (self: Tab) -> (),
 	disableDebugger: (self: Tab) -> (),
 	getScriptSource: (self: Tab, scriptId: string) -> string,
+	enableProfiler: (self: Tab) -> Tab,
+	disableProfiler: (self: Tab) -> Tab,
+	startJsCoverage: (self: Tab) -> Tab,
+	stopJsCoverage: (self: Tab) -> Tab,
+	takeJsCoverage: (self: Tab) -> { Profiler.ScriptCoverage },
 	enableStealthMode: (self: Tab) -> (),
 	close: (self: Tab) -> (),
 }

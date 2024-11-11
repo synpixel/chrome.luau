@@ -18,6 +18,7 @@ local DOM = require("../protocol/DOM")
 local Input = require("../protocol/Input")
 local Log = require("../protocol/Log")
 local Debugger = require("../protocol/Debugger")
+local Profiler = require("../protocol/Profiler")
 
 --- A handle to a single page. Exposes methods for simulating user actions (clicking,
 --- typing), and also for getting information about the DOM and other parts of the page.
@@ -732,6 +733,64 @@ local function getScriptSource(self: Tab, scriptId: string): string
 	return self:callMethod(Debugger.GetScriptSource, { scriptId = scriptId }).scriptSource
 end
 
+--- Enables the profiler domain.
+--- @within Tab
+local function enableProfiler(self: Tab): Tab
+	self:callMethod(Profiler.Enable)
+	return self
+end
+
+--- Disables the profiler domain.
+--- @within Tab
+local function disableProfiler(self: Tab): Tab
+	self:callMethod(Profiler.Disable)
+	return self
+end
+
+--[=[
+	Starts tracking which lines of JS have been executed
+
+	Will error unless `enableProfiler` has been called.
+
+	Equivalent to hitting the record button in the "coverage" tab in Chrome DevTools.
+
+	By default we enable the 'detailed' flag on StartPreciseCoverage, which enables block-level
+	granularity, and also enable 'call_count' (which when disabled always sets count to 1 or 0).
+
+	@within Tab
+]=]
+local function startJsCoverage(self: Tab): Tab
+	self:callMethod(Profiler.StartPreciseCoverage, { callCount = true, detailed = true })
+	return self
+end
+
+--- Stops tracking which lines of JS have been executed.
+--- If you're finished with the profiler, don't forget to call `disable_profiler`.
+--- @within Tab
+local function stopJsCoverage(self: Tab): Tab
+	self:callMethod(Profiler.StopPreciseCoverage)
+	return self
+end
+
+--[=[
+	Collect coverage data for the current isolate, and resets execution counters.
+
+	Precise code coverage needs to have started (see `startJsCoverage`).
+
+	Will only send information about code that's been executed since this method was last
+	called, or (if this is the first time) since calling `startJsCoverage`.
+	Another way of thinking about it is: every time you call this, the call counts for
+	FunctionRanges are reset after returning.
+
+	The format of the data is a little unintuitive, see here for details:
+	<https://chromedevtools.github.io/devtools-protocol/tot/Profiler#type-ScriptCoverage>
+
+	@within Tab
+]=]
+local function takeJsCoverage(self: Tab): { Profiler.ScriptCoverage }
+	return self:callMethod(Profiler.TakePreciseCoverage).result
+end
+
 local function bypassUserAgent(self: Tab)
 	local object = self:evaluate("window.navigator.userAgent", true)
 	local userAgent = object.value :: string?
@@ -912,6 +971,11 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		enableDebugger = enableDebugger,
 		disableDebugger = disableDebugger,
 		getScriptSource = getScriptSource,
+		enableProfiler = enableProfiler,
+		disableProfiler = disableProfiler,
+		startJsCoverage = startJsCoverage,
+		stopJsCoverage = stopJsCoverage,
+		takeJsCoverage = takeJsCoverage,
 		enableStealthMode = enableStealthMode,
 		close = close,
 	}
