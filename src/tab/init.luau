@@ -92,6 +92,12 @@ local function setUserAgent(self: Tab, userAgent: string, acceptLanguage: string
 	)
 end
 
+--- @within Tab
+local function setExtraHttpHeaders(self: Tab, headers: { [string]: string })
+	self:callMethod(Network.Enable, {})
+	self:callMethod(Network.SetExtraHTTPHeaders, { headers = headers })
+end
+
 --- Pulls focus to this tab
 --- @within Tab
 local function bringToFront(self: Tab)
@@ -831,6 +837,7 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		getTargetInfo = getTargetInfo,
 		getBrowserContextId = getBrowserContextId,
 		setUserAgent = setUserAgent,
+		setExtraHttpHeaders = setExtraHttpHeaders,
 		bringToFront = bringToFront,
 		reload = reload,
 		stopLoading = stopLoading,

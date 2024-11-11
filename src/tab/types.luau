@@ -40,6 +40,7 @@ export type Tab = {
 	getTargetInfo: (self: Tab) -> Target.TargetInfo,
 	getBrowserContextId: (self: Tab) -> string?,
 	setUserAgent: (self: Tab, userAgent: string, acceptLanguage: string?, platform: string?) -> (),
+	setExtraHttpHeaders: (self: Tab, headers: { [string]: string }) -> (),
 	bringToFront: (self: Tab) -> (),
 	reload: (self: Tab, ignoreCache: boolean?, scriptToEvaluateOnLoad: string?) -> Tab,
 	stopLoading: (self: Tab) -> (),
