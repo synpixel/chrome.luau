@@ -253,8 +253,17 @@ end
 
 --- @within Tab
 local function getStorage(self: Tab, name: string): any?
-	local item = self:evaluate(`localStorage.getItem("{name}")`).value
-	return item
+	local result = self:evaluate(`localStorage.getItem("{name}")`)
+	if result.type ~= "string" then
+		return nil
+	end
+
+	local success, item = pcall(serde.decode, "json" :: serde.EncodeDecodeFormat, result.value :: string)
+	if success then
+		return item
+	end
+
+	return result.value
 end
 
 --- @within Tab
