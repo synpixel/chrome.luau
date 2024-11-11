@@ -15,5 +15,3 @@ build = "scripts/build.luau"
 
 [indices]
 default = "https://github.com/daimond113/pesde-index"
-
-[dependencies]
