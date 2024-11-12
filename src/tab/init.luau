@@ -1033,15 +1033,15 @@ local function handleTabLevelEvents(self: Tab)
 	end)
 
 	self:addEventListener(Fetch.AuthRequired, function(params)
-		local authHandler = self.authHandler
-		if authHandler == nil then
+		local response = self.authHandler
+		if response == nil then
 			return
 		end
 
 		local requestId = params.requestId
 		self:callMethod(Fetch.ContinueWithAuth, {
 			requestId = requestId,
-			authChallengeResponse = authHandler,
+			authChallengeResponse = response,
 		})
 	end)
 end
