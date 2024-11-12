@@ -70,7 +70,7 @@ export type Tab = {
 	requestInterceptor: RequestInterceptor?,
 	-- TODO: response_handler
 	-- TODO: loading_failed_handler
-	-- TODO: auth_handler
+	authHandler: Fetch.AuthChallengeResponse?,
 	defaultTimeout: number,
 	-- TODO: page_bindings
 	-- TODO: event_listeners
@@ -206,6 +206,7 @@ export type Tab = {
 	enableFetch: (self: Tab, patterns: { Fetch.RequestPattern }?, handleAuthRequests: boolean?) -> Tab,
 	disableFetch: (self: Tab) -> Tab,
 	enableRequestInterception: (self: Tab, interceptor: RequestInterceptor) -> (),
+	authenticate: (self: Tab, username: string, password: string?) -> Tab,
 	enableStealthMode: (self: Tab) -> (),
 	close: (self: Tab) -> (),
 }

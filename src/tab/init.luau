@@ -893,6 +893,16 @@ local function enableRequestInterception(self: Tab, interceptor: types.RequestIn
 	self.requestInterceptor = interceptor
 end
 
+--- @within Tab
+local function authenticate(self: Tab, username: string, password: string?): Tab
+	self.authHandler = {
+		response = "ProvideCredentials",
+		username = username,
+		password = password,
+	}
+	return self
+end
+
 local function bypassUserAgent(self: Tab)
 	local object = self:evaluate("window.navigator.userAgent", true)
 	local userAgent = object.value :: string?
@@ -1001,12 +1011,12 @@ local function handleTabLevelEvents(self: Tab)
 	end)
 
 	self:addEventListener(Fetch.RequestPaused, function(params)
-		if self.requestInterceptor == nil then
+		local interceptor = self.requestInterceptor
+		if interceptor == nil then
 			self:callMethod(Fetch.ContinueRequest, { requestId = params.requestId })
 			return
 		end
 
-		local interceptor = self.requestInterceptor
 		local decision = interceptor(self.transport, self.sessionId, params)
 
 		if decision.action == "Continue" then
@@ -1020,6 +1030,19 @@ local function handleTabLevelEvents(self: Tab)
 		elseif decision.action == "Fail" then
 			self:callMethod(Fetch.FailRequest, decision)
 		end
+	end)
+
+	self:addEventListener(Fetch.AuthRequired, function(params)
+		local authHandler = self.authHandler
+		if authHandler == nil then
+			return
+		end
+
+		local requestId = params.requestId
+		self:callMethod(Fetch.ContinueWithAuth, {
+			requestId = requestId,
+			authChallengeResponse = authHandler,
+		})
 	end)
 end
 
@@ -1035,6 +1058,7 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		navigating = false,
 		targetInfo = targetInfo,
 		requestInterceptor = nil,
+		authHandler = nil,
 		defaultTimeout = 20,
 		slowMotionMultiplier = 0,
 		getTargetId = getTargetId,
@@ -1110,6 +1134,7 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		enableFetch = enableFetch,
 		disableFetch = disableFetch,
 		enableRequestInterception = enableRequestInterception,
+		authenticate = authenticate,
 		enableStealthMode = enableStealthMode,
 		close = close,
 	}
