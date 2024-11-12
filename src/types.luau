@@ -103,6 +103,8 @@ export type Tab = {
 	waitUntilRedirect: (self: Tab) -> Tab,
 	getBounds: (self: Tab) -> Browser.Bounds,
 	setBounds: (self: Tab, bounds: Browser.Bounds) -> Tab,
+	setTransparentBackgroundColor: (self: Tab) -> Tab,
+	setBackgroundColor: (self: Tab, color: DOM.RGBA) -> Tab,
 	evaluate: (self: Tab, expression: string, awaitPromise: boolean?) -> Runtime.RemoteObject,
 	getTitle: (self: Tab) -> string,
 	setCookies: (self: Tab, cookies: { Network.CookieParam }) -> (),

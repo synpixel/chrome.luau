@@ -13,6 +13,7 @@ local types = require("../types")
 local Target = require("../protocol/Target")
 local Page = require("../protocol/Page")
 local Browser = require("../protocol/Browser")
+local Emulation = require("../protocol/Emulation")
 local Runtime = require("../protocol/Runtime")
 local Network = require("../protocol/Network")
 local DOM = require("../protocol/DOM")
@@ -237,6 +238,24 @@ local function setBounds(self: Tab, bounds: Browser.Bounds): Tab
 
 	self.transport:callMethodOnBrowser(Browser.SetWindowBounds, { windowId = windowId, bounds = bounds })
 
+	return self
+end
+
+--- Set the background color of the dom to transparent.
+--- Useful when you want capture a .png
+--- @within Tab
+local function setTransparentBackgroundColor(self: Tab): Tab
+	self:callMethod(Emulation.SetDefaultBackgroundColorOverride, {
+		color = { r = 0, g = 0, b = 0, a = 0 },
+	})
+	return self
+end
+
+--- Set the default background color of the dom.
+--- Pass a RGBA to override the backrgound color of the dom.
+--- @within Tab
+local function setBackgroundColor(self: Tab, color: DOM.RGBA): Tab
+	self:callMethod(Emulation.SetDefaultBackgroundColorOverride, { color = color })
 	return self
 end
 
@@ -981,6 +1000,8 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		waitUntilRedirect = waitUntilRedirect,
 		getBounds = getBounds,
 		setBounds = setBounds,
+		setTransparentBackgroundColor = setTransparentBackgroundColor,
+		setBackgroundColor = setBackgroundColor,
 		evaluate = evaluate,
 		getTitle = getTitle,
 		setCookies = setCookies,
