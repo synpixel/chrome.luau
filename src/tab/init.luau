@@ -158,7 +158,7 @@ end
 
 	@within Tab
 ]=]
-local function handleFileChooser(self: Tab, files: { string }, nodeId: number)
+local function handleFileChooser(self: Tab, files: { string }, nodeId: DOM.NodeId)
 	self:callMethod(DOM.SetFileInputFiles, { files = files, nodeId = nodeId })
 end
 
@@ -464,6 +464,11 @@ local function getContent(self: Tab): string
 
 	local html = self:evaluate(expression).value
 	return html :: string
+end
+
+--- @within Tab
+local function describeNode(self: Tab, nodeId: DOM.NodeId): DOM.Node
+	return self:callMethod(DOM.DescribeNode, { nodeId = nodeId, depth = 100 }).node
 end
 
 --- @within Tab
@@ -1018,6 +1023,7 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		getDialog = getDialog,
 		getDocument = getDocument,
 		getContent = getContent,
+		describeNode = describeNode,
 		runQuerySelectorOnNode = runQuerySelectorOnNode,
 		runQuerySelectorAllOnNode = runQuerySelectorAllOnNode,
 		findElement = findElement,

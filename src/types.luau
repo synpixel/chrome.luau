@@ -94,7 +94,7 @@ export type Tab = {
 	setUserAgent: (self: Tab, userAgent: string, acceptLanguage: string?, platform: string?) -> (),
 	setExtraHttpHeaders: (self: Tab, headers: { [string]: string }) -> (),
 	setFileChooserDialogInterception: (self: Tab, enabled: boolean) -> (),
-	handleFileChooser: (self: Tab, files: { string }, nodeId: number) -> (),
+	handleFileChooser: (self: Tab, files: { string }, nodeId: DOM.NodeId) -> (),
 	bringToFront: (self: Tab) -> (),
 	reload: (self: Tab, ignoreCache: boolean?, scriptToEvaluateOnLoad: string?) -> Tab,
 	stopLoading: (self: Tab) -> (),
@@ -171,6 +171,7 @@ export type Tab = {
 	getDialog: (self: Tab) -> Dialog.Dialog,
 	getDocument: (self: Tab) -> DOM.Node,
 	getContent: (self: Tab) -> string,
+	describeNode: (self: Tab, nodeId: DOM.NodeId) -> DOM.Node,
 	runQuerySelectorOnNode: (self: Tab, nodeId: DOM.NodeId, selector: string) -> Element?,
 	runQuerySelectorAllOnNode: (self: Tab, nodeId: DOM.NodeId, selector: string) -> { Element },
 	findElement: (self: Tab, selector: string) -> Element?,
@@ -207,7 +208,7 @@ export type Tab = {
 
 export type Element = {
 	remoteObjectId: string,
-	backendNodeId: number,
+	backendNodeId: DOM.BackendNodeId,
 	nodeId: DOM.NodeId,
 	parent: Tab,
 	attributes: { string }?,
