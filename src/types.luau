@@ -73,11 +73,12 @@ export type Tab = {
 	defaultTimeout: number,
 	-- TODO: page_bindings
 	-- TODO: event_listeners
-	-- TODO: slow_motion_multiplier
+	slowMotionMultiplier: number,
 	getTargetId: (self: Tab) -> string,
 	updateTargetInfo: (self: Tab, targetInfo: Target.TargetInfo) -> (),
 	getUrl: (self: Tab) -> string,
 	setDefaultTimeout: (self: Tab, timeout: number) -> Tab,
+	setSlowMotionMultiplier: (self: Tab, multiplier: number) -> Tab,
 	callMethod: <Request, Response>(
 		self: Tab,
 		method: string & { __Request: Request, __Response: Response },

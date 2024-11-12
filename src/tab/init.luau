@@ -1,5 +1,6 @@
 local serde = require("@lune/serde")
 local Regex = require("@lune/regex")
+local task = require("@lune/task")
 local Transport = require("../transport")
 local Element = require("./element")
 local ElementQuad = require("./element-quad")
@@ -50,6 +51,44 @@ end
 local function setDefaultTimeout(self: Tab, timeout: number): Tab
 	self.defaultTimeout = timeout
 	return self
+end
+
+--[=[
+	Analogous to Puppeteer's ['slowMo' option](https://github.com/GoogleChrome/puppeteer/blob/v1.20.0/docs/api.md#puppeteerconnectoptions),
+	but with some differences:
+
+	* It doesn't add a delay after literally every message sent via the protocol, but instead
+	just for:
+		* clicking a specific point on the page (default: 100ms before moving the mouse, 250ms
+		before pressing and releasting mouse button)
+		* pressing a key (default: 25 ms)
+		* reloading the page (default: 100ms)
+		* closing a tab (default: 100ms)
+	* Instead of an absolute number of milliseconds, it's a multiplier, so that we can delay
+	longer on certain actions like clicking or moving the mouse, and shorter on others like
+	on pressing a key (or the individual 'mouseDown' and 'mouseUp' actions that go across the
+	wire. If the delay was always the same, filling out a form (e.g.) would take ages).
+
+	By default the multiplier is set to zero, which effectively disables the slow motion.
+
+	The defaults for the various actions (i.e. how long we sleep for when
+	multiplier is 1.0) are supposed to be just slow enough to help a human see what's going on
+	as a test runs.
+
+	@within Tab
+]=]
+local function setSlowMotionMultiplier(self: Tab, multiplier: number): Tab
+	self.slowMotionMultiplier = multiplier
+	return self
+end
+
+local function optionalSlowMotionSleep(self: Tab, millis: number)
+	if self.slowMotionMultiplier == 0 then
+		return
+	end
+
+	local seconds = millis / 1000
+	task.wait(seconds * self.slowMotionMultiplier)
 end
 
 --- Call a target method.
@@ -138,6 +177,7 @@ end
 	@within Tab
 ]=]
 local function reload(self: Tab, ignoreCache: boolean?, scriptToEvaluateOnLoad: string?): Tab
+	optionalSlowMotionSleep(self, 100)
 	self:callMethod(Page.Reload, { ignoreCache = ignoreCache, scriptToEvaluateOnLoad = scriptToEvaluateOnLoad })
 	return self
 end
@@ -556,6 +596,8 @@ end
 --- Moves the mouse to this point (dispatches a mouseMoved event)
 --- @within Tab
 local function moveMouseToPoint(self: Tab, point: types.Point): Tab
+	optionalSlowMotionSleep(self, 100)
+
 	self:callMethod(Input.DispatchMouseEvent, {
 		type = "mouseMoved",
 		x = point.x,
@@ -568,6 +610,8 @@ end
 --- @within Tab
 local function clickPoint(self: Tab, point: types.Point): Tab
 	self:moveMouseToPoint(point)
+
+	optionalSlowMotionSleep(self, 250)
 
 	self:callMethod(Input.DispatchMouseEvent, {
 		type = "mousePressed",
@@ -635,6 +679,8 @@ local function pressKeyWithModifiers(self: Tab, key: keys.Key, modifiers: { "Alt
 			mods = bit32.bor(mods, index)
 		end
 	end
+
+	optionalSlowMotionSleep(self, 25)
 
 	self:callMethod(Input.DispatchKeyEvent, {
 		type = keyDownEvent,
@@ -887,6 +933,7 @@ end
 --- Closes the target Page
 --- @within Tab
 local function close(self: Tab)
+	optionalSlowMotionSleep(self, 50)
 	self:callMethod(Target.CloseTarget, { targetId = self.targetId })
 end
 
@@ -912,10 +959,12 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		navigating = false,
 		targetInfo = targetInfo,
 		defaultTimeout = 20,
+		slowMotionMultiplier = 0,
 		getTargetId = getTargetId,
 		updateTargetInfo = updateTargetInfo,
 		getUrl = getUrl,
 		setDefaultTimeout = setDefaultTimeout,
+		setSlowMotionMultiplier = setSlowMotionMultiplier,
 		callMethod = callMethod,
 		addEventListener = addEventListener,
 		getTargetInfo = getTargetInfo,
