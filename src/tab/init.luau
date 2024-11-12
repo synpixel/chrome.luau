@@ -75,7 +75,7 @@ end
 --- Fetches the most recent info about this target
 --- @within Tab
 local function getTargetInfo(self: Tab): Target.TargetInfo
-	return self:callMethod(Target.GetTargetInfo, { targetId = self.targetId }).targetInfo
+	return self.transport:callMethodOnBrowser(Target.GetTargetInfo, { targetId = self.targetId }).targetInfo
 end
 
 --- @within Tab
