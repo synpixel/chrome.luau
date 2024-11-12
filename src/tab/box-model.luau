@@ -1,4 +1,4 @@
-local types = require("./types")
+local types = require("../types")
 local Page = require("../protocol/Page")
 
 --- @class BoxModel

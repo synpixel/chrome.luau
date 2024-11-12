@@ -1,4 +1,4 @@
-local types = require("./types")
+local types = require("../types")
 
 --- @class ElementQuad
 export type ElementQuad = types.ElementQuad

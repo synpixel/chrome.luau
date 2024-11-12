@@ -2,7 +2,7 @@ local serde = require("@lune/serde")
 local ElementQuad = require("./element-quad")
 local BoxModel = require("./box-model")
 local Wait = require("../utils/wait")
-local types = require("./types")
+local types = require("../types")
 local DOM = require("../protocol/DOM")
 local Runtime = require("../protocol/Runtime")
 

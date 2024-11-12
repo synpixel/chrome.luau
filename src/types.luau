@@ -1,14 +1,55 @@
-local Transport = require("../transport")
-local Dialog = require("./dialog")
-local keys = require("./keys")
-local Target = require("../protocol/Target")
-local Page = require("../protocol/Page")
-local Browser = require("../protocol/Browser")
-local Runtime = require("../protocol/Runtime")
-local Network = require("../protocol/Network")
-local DOM = require("../protocol/DOM")
-local Log = require("../protocol/Log")
-local Profiler = require("../protocol/Profiler")
+local Transport = require("./transport")
+local Dialog = require("./tab//dialog")
+local keys = require("./tab/keys")
+local Target = require("./protocol/Target")
+local Page = require("./protocol/Page")
+local Browser = require("./protocol/Browser")
+local Runtime = require("./protocol/Runtime")
+local Network = require("./protocol/Network")
+local DOM = require("./protocol/DOM")
+local Log = require("./protocol/Log")
+local Profiler = require("./protocol/Profiler")
+
+export type Browser = {
+	transport: Transport.Transport,
+	tabs: { Tab },
+	getTabs: (self: Browser) -> { Tab },
+	callMethod: <Request, Response>(
+		self: Browser,
+		method: string & { __Request: Request, __Response: Response },
+		params: Request
+	) -> Response,
+	addEventListener: <Parameters>(
+		self: Browser,
+		event: string & { __Parameters: Parameters },
+		callback: (params: Parameters) -> ()
+	) -> () -> (),
+	getVersion: (
+		self: Browser
+	) -> {
+		protocolVersion: string,
+		product: string,
+		revision: string,
+		userAgent: string,
+		jsVersion: string,
+	},
+	newTabWithOptions: (
+		self: Browser,
+		options: {
+			url: string,
+			width: number?,
+			height: number?,
+			browserContextId: Browser.BrowserContextID?,
+			enableBeginFrameControl: boolean?,
+			newWindow: boolean?,
+			background: boolean?,
+			forTab: boolean?,
+		}
+	) -> Tab,
+	newTab: (self: Browser) -> Tab,
+	registerMissingTabs: (self: Browser) -> (),
+	close: (self: Browser) -> (),
+}
 
 export type Tab = {
 	targetId: string,
