@@ -1140,8 +1140,9 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 	}
 
 	tab:callMethod(Page.Enable)
-	handleTabLevelEvents(tab)
 	tab:callMethod(Page.SetLifecycleEventsEnabled, { enabled = true })
+
+	handleTabLevelEvents(tab)
 
 	return tab
 end
