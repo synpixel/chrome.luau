@@ -73,7 +73,6 @@ export type Tab = {
 	authHandler: Fetch.AuthChallengeResponse?,
 	defaultTimeout: number,
 	-- TODO: page_bindings
-	-- TODO: event_listeners
 	slowMotionMultiplier: number,
 	getTargetId: (self: Tab) -> string,
 	updateTargetInfo: (self: Tab, targetInfo: Target.TargetInfo) -> (),
