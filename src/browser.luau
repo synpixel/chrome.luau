@@ -1,7 +1,9 @@
 local ChromeProcess = require("./chrome-process")
 local Transport = require("./transport")
 local Tab = require("./tab")
+local Context = require("./context")
 local Wait = require("./utils/wait")
+local types = require("./types")
 local Browser = require("./protocol/Browser")
 local Target = require("./protocol/Target")
 
@@ -18,46 +20,7 @@ local Target = require("./protocol/Target")
 
 	@class Browser
 ]=]
-export type Browser = {
-	transport: Transport.Transport,
-	tabs: { Tab.Tab },
-	getTabs: (self: Browser) -> { Tab.Tab },
-	callMethod: <Request, Response>(
-		self: Browser,
-		method: string & { __Request: Request, __Response: Response },
-		params: Request
-	) -> Response,
-	addEventListener: <Parameters>(
-		self: Browser,
-		event: string & { __Parameters: Parameters },
-		callback: (params: Parameters) -> ()
-	) -> () -> (),
-	getVersion: (
-		self: Browser
-	) -> {
-		protocolVersion: string,
-		product: string,
-		revision: string,
-		userAgent: string,
-		jsVersion: string,
-	},
-	newTabWithOptions: (
-		self: Browser,
-		options: {
-			url: string,
-			width: number?,
-			height: number?,
-			browserContextId: Browser.BrowserContextID?,
-			enableBeginFrameControl: boolean?,
-			newWindow: boolean?,
-			background: boolean?,
-			forTab: boolean?,
-		}
-	) -> Tab.Tab,
-	newTab: (self: Browser) -> Tab.Tab,
-	registerMissingTabs: (self: Browser) -> (),
-	close: (self: Browser) -> (),
-}
+export type Browser = types.Browser
 
 local DEFAULT_IDLE_TIMEOUT = 30
 
@@ -131,6 +94,13 @@ end
 --- @within Browser
 local function newTab(self: Browser): Tab.Tab
 	return self:newTabWithOptions({ url = "about:blank" })
+end
+
+--- Creates the equivalent of a new incognito window, AKA a browser context
+--- @within Browser
+local function newContext(self: Browser): Context.Context
+	local contextId = self:callMethod(Target.CreateBrowserContext, {}).browserContextId
+	return Context.new(self, contextId)
 end
 
 --- Adds tabs that have not been opened with `newTab` to the list of tabs
@@ -231,6 +201,7 @@ local function connectWithTimeout(websocketUrl: string, idleBrowserTimeout: numb
 		getVersion = getVersion,
 		newTabWithOptions = newTabWithOptions,
 		newTab = newTab,
+		newContext = newContext,
 		registerMissingTabs = registerMissingTabs,
 		close = close,
 	}

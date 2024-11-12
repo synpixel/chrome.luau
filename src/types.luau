@@ -1,5 +1,5 @@
 local Transport = require("./transport")
-local Dialog = require("./tab//dialog")
+local Dialog = require("./tab/dialog")
 local keys = require("./tab/keys")
 local Target = require("./protocol/Target")
 local Page = require("./protocol/Page")
@@ -47,8 +47,17 @@ export type Browser = {
 		}
 	) -> Tab,
 	newTab: (self: Browser) -> Tab,
+	newContext: (self: Browser) -> Context,
 	registerMissingTabs: (self: Browser) -> (),
 	close: (self: Browser) -> (),
+}
+
+export type Context = {
+	id: string,
+	browser: Browser,
+	getId: (self: Context) -> string,
+	getTabs: (self: Context) -> { Tab },
+	newTab: (self: Context) -> Tab,
 }
 
 export type Tab = {
