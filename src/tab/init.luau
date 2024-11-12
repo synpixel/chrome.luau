@@ -21,6 +21,7 @@ local Input = require("../protocol/Input")
 local Log = require("../protocol/Log")
 local Debugger = require("../protocol/Debugger")
 local Profiler = require("../protocol/Profiler")
+local Fetch = require("../protocol/Fetch")
 
 --- A handle to a single page. Exposes methods for simulating user actions (clicking,
 --- typing), and also for getting information about the DOM and other parts of the page.
@@ -863,6 +864,35 @@ local function takeJsCoverage(self: Tab): { Profiler.ScriptCoverage }
 	return self:callMethod(Profiler.TakePreciseCoverage).result
 end
 
+--- Enables fetch domain.
+--- @within Tab
+local function enableFetch(self: Tab, patterns: { Fetch.RequestPattern }?, handleAuthRequests: boolean?): Tab
+	self:callMethod(Fetch.Enable, { patterns = patterns, handleAuthRequests = handleAuthRequests })
+	return self
+end
+
+--- Disables fetch domain.
+--- @within Tab
+local function disableFetch(self: Tab): Tab
+	self:callMethod(Fetch.Disable)
+	return self
+end
+
+--[=[
+	Allows you to inspect outgoing network requests from the tab, and optionally return
+	your own responses to them
+
+	The `interceptor` argument is a closure which takes this tab's `Transport` and its SessionID
+	so that you can call methods from within the closure using `transport.callMethodOnTarget`.
+
+	The closure needs to return { action: "Fulfill" | "Fail" | "Continue", ... }.
+
+	@within Tab
+]=]
+local function enableRequestInterception(self: Tab, interceptor: types.RequestInterceptor)
+	self.requestInterceptor = interceptor
+end
+
 local function bypassUserAgent(self: Tab)
 	local object = self:evaluate("window.navigator.userAgent", true)
 	local userAgent = object.value :: string?
@@ -969,6 +999,28 @@ local function handleTabLevelEvents(self: Tab)
 			self.navigating = true
 		end
 	end)
+
+	self:addEventListener(Fetch.RequestPaused, function(params)
+		if self.requestInterceptor == nil then
+			self:callMethod(Fetch.ContinueRequest, { requestId = params.requestId })
+			return
+		end
+
+		local interceptor = self.requestInterceptor
+		local decision = interceptor(self.transport, self.sessionId, params)
+
+		if decision.action == "Continue" then
+			if (decision :: any).requestId ~= nil then
+				self:callMethod(Fetch.ContinueRequest, decision :: any)
+			else
+				self:callMethod(Fetch.ContinueRequest, { requestId = params.requestId })
+			end
+		elseif decision.action == "Fulfill" then
+			self:callMethod(Fetch.FulfillRequest, decision)
+		elseif decision.action == "Fail" then
+			self:callMethod(Fetch.FailRequest, decision)
+		end
+	end)
 end
 
 --- @within Tab
@@ -982,6 +1034,7 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		sessionId = sessionId,
 		navigating = false,
 		targetInfo = targetInfo,
+		requestInterceptor = nil,
 		defaultTimeout = 20,
 		slowMotionMultiplier = 0,
 		getTargetId = getTargetId,
@@ -1054,6 +1107,9 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		startJsCoverage = startJsCoverage,
 		stopJsCoverage = stopJsCoverage,
 		takeJsCoverage = takeJsCoverage,
+		enableFetch = enableFetch,
+		disableFetch = disableFetch,
+		enableRequestInterception = enableRequestInterception,
 		enableStealthMode = enableStealthMode,
 		close = close,
 	}

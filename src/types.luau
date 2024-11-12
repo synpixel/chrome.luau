@@ -9,6 +9,7 @@ local Network = require("./protocol/Network")
 local DOM = require("./protocol/DOM")
 local Log = require("./protocol/Log")
 local Profiler = require("./protocol/Profiler")
+local Fetch = require("./protocol/Fetch")
 
 export type Browser = {
 	transport: Transport.Transport,
@@ -66,7 +67,7 @@ export type Tab = {
 	sessionId: string,
 	navigating: boolean,
 	targetInfo: Target.TargetInfo,
-	-- TODO: request_interceptor
+	requestInterceptor: RequestInterceptor?,
 	-- TODO: response_handler
 	-- TODO: loading_failed_handler
 	-- TODO: auth_handler
@@ -202,8 +203,50 @@ export type Tab = {
 	startJsCoverage: (self: Tab) -> Tab,
 	stopJsCoverage: (self: Tab) -> Tab,
 	takeJsCoverage: (self: Tab) -> { Profiler.ScriptCoverage },
+	enableFetch: (self: Tab, patterns: { Fetch.RequestPattern }?, handleAuthRequests: boolean?) -> Tab,
+	disableFetch: (self: Tab) -> Tab,
+	enableRequestInterception: (self: Tab, interceptor: RequestInterceptor) -> (),
 	enableStealthMode: (self: Tab) -> (),
 	close: (self: Tab) -> (),
+}
+
+export type RequestInterceptor = (
+	transport: Transport.Transport,
+	sessionId: string,
+	params: {
+		requestId: Fetch.RequestId,
+		request: Network.Request,
+		frameId: Page.FrameId,
+		resourceType: Network.ResourceType,
+		responseErrorReason: Network.ErrorReason?,
+		responseStatusCode: number?,
+		responseStatusText: string?,
+		responseHeaders: { Fetch.HeaderEntry }?,
+		networkId: Network.RequestId?,
+		redirectedRequestId: Fetch.RequestId?,
+	}
+) -> {
+	action: "Fulfill",
+	requestId: Fetch.RequestId,
+	responseCode: number,
+	responseHeaders: { Fetch.HeaderEntry }?,
+	binaryResponseHeaders: string?,
+	body: string?,
+	responsePhrase: string?,
+} | {
+	action: "Fail",
+	requestId: Fetch.RequestId,
+	errorReason: Network.ErrorReason,
+} | {
+	action: "Continue",
+} | {
+	action: "Continue",
+	requestId: Fetch.RequestId,
+	url: string?,
+	method: string?,
+	postData: string?,
+	headers: { Fetch.HeaderEntry }?,
+	interceptResponse: boolean?,
 }
 
 export type Element = {
