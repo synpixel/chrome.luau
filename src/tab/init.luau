@@ -894,7 +894,7 @@ local function enableRequestInterception(self: Tab, interceptor: types.RequestIn
 end
 
 --- @within Tab
-local function authenticate(self: Tab, username: string, password: string?): Tab
+local function authenticate(self: Tab, username: string?, password: string?): Tab
 	self.authHandler = {
 		response = "ProvideCredentials",
 		username = username,
