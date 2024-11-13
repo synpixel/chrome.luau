@@ -1046,7 +1046,6 @@ local function handleTabLevelEvents(self: Tab)
 	end)
 end
 
---- @within Tab
 local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport): Tab
 	local targetId = targetInfo.targetId
 	local sessionId = transport:callMethodOnBrowser(Target.AttachToTarget, { targetId = targetId }).sessionId
