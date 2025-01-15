@@ -256,9 +256,10 @@ end
 local browserDefinition = readJson(`{IN}/browser_protocol.json`) :: ProtocolDefinition
 local jsDefinition = readJson(`{IN}/js_protocol.json`) :: ProtocolDefinition
 
-if fs.isDir(OUT) == false then
-	fs.writeDir(OUT)
+if fs.isDir(OUT) then
+	fs.removeDir(OUT)
 end
+fs.writeDir(OUT)
 
 local log = `{stdio.color("cyan")}%s{stdio.color("reset")} {stdio.style("dim")}>{stdio.style("reset")} {OUT}/%s.luau`
 
