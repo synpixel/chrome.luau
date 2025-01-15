@@ -1,11 +1,8 @@
 local types = require("../types")
 local Page = require("../protocol/Page")
 
---- @class BoxModel
 export type BoxModel = types.BoxModel
 
---- Create a `Page.Viewport` equal to the content-box, using a scale of 1.0
---- @within BoxModel
 local function contentViewport(self: BoxModel): Page.Viewport
 	return {
 		x = self.content.topLeft.x,
@@ -16,8 +13,6 @@ local function contentViewport(self: BoxModel): Page.Viewport
 	}
 end
 
---- Create a `Page.Viewport` equal to the padding-box, using a scale of 1.0
---- @within BoxModel
 local function paddingViewport(self: BoxModel): Page.Viewport
 	return {
 		x = self.padding.topLeft.x,
@@ -28,8 +23,6 @@ local function paddingViewport(self: BoxModel): Page.Viewport
 	}
 end
 
---- Create a `Page.Viewport` equal to the border-box, using a scale of 1.0
---- @within BoxModel
 local function borderViewport(self: BoxModel): Page.Viewport
 	return {
 		x = self.border.topLeft.x,
@@ -40,8 +33,6 @@ local function borderViewport(self: BoxModel): Page.Viewport
 	}
 end
 
---- Create a `Page.Viewport` equal to the margin-box, using a scale of 1.0
---- @within BoxModel
 local function marginViewport(self: BoxModel): Page.Viewport
 	return {
 		x = self.margin.topLeft.x,

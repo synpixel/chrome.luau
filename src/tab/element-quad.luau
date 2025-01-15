@@ -1,114 +1,75 @@
 local types = require("../types")
 
---- @class ElementQuad
 export type ElementQuad = types.ElementQuad
 
---- @within ElementQuad
 local function height(self: ElementQuad): number
 	return self.bottomLeft.y - self.topLeft.y
 end
 
---- @within ElementQuad
 local function width(self: ElementQuad): number
 	return self.topRight.x - self.topLeft.x
 end
 
---- The width divided by the height
---- @within ElementQuad
 local function aspectRatio(self: ElementQuad): number
 	return self:width() / self:height()
 end
 
---- The most left (smallest) x-coordinate
---- @within ElementQuad
 local function mostLeft(self: ElementQuad): number
 	return math.min(self.topRight.x, self.topLeft.x, self.bottomRight.x, self.bottomLeft.x)
 end
 
---- The most right (largest) x-coordinate
---- @within ElementQuad
 local function mostRight(self: ElementQuad): number
 	return math.max(self.topRight.x, self.topLeft.x, self.bottomRight.x, self.bottomLeft.x)
 end
 
---- The most top (smallest) y-coordinate
---- @within ElementQuad
 local function mostTop(self: ElementQuad): number
 	return math.min(self.topRight.y, self.topLeft.y, self.bottomRight.y, self.bottomLeft.y)
 end
 
---- The most bottom (largest) y-coordinate
---- @within ElementQuad
 local function mostBottom(self: ElementQuad): number
 	return math.max(self.topRight.y, self.topLeft.y, self.bottomRight.y, self.bottomLeft.y)
 end
 
---- If the most bottom point of `self` is above the most top point of `other`
---- @within ElementQuad
 local function strictlyAbove(self: ElementQuad, other: ElementQuad): boolean
 	return self:mostBottom() < other:mostTop()
 end
 
---- If the most bottom point of `self` is above or on the same line as the
---- most top point of `other`
---- @within ElementQuad
 local function above(self: ElementQuad, other: ElementQuad): boolean
 	return self:mostBottom() <= other:mostTop()
 end
 
---- If the most top point of `self` is below the most bottom point of `other`
---- @within ElementQuad
 local function strictlyBelow(self: ElementQuad, other: ElementQuad): boolean
 	return self:mostTop() > other:mostBottom()
 end
 
---- If the most top point of `self` is below or on the same line as the
---- most bottom point of `other`
---- @within ElementQuad
 local function below(self: ElementQuad, other: ElementQuad): boolean
 	return self:mostTop() >= other:mostBottom()
 end
 
---- If the most right point of `self` is left of the most left point of `other`
---- @within ElementQuad
 local function strictlyLeftOf(self: ElementQuad, other: ElementQuad): boolean
 	return self:mostRight() < other:mostLeft()
 end
 
---- If the most right point of `self` is left or on the same line as the
---- most left point of `other`
---- @within ElementQuad
 local function leftOf(self: ElementQuad, other: ElementQuad): boolean
 	return self:mostRight() <= other:mostLeft()
 end
 
---- If the most left point of `self` is right of the most right point of `other`
---- @within ElementQuad
 local function strictlyRightOf(self: ElementQuad, other: ElementQuad): boolean
 	return self:mostLeft() > other:mostRight()
 end
 
---- If the most left point of `self` is right or on the same line as the
---- most right point of `other`
---- @within ElementQuad
 local function rightOf(self: ElementQuad, other: ElementQuad): boolean
 	return self:mostLeft() >= other:mostRight()
 end
 
---- If `self` is within the left/right boundaries defined by `other`.
---- @within ElementQuad
 local function withinHorizontalBoundsOf(self: ElementQuad, other: ElementQuad): boolean
 	return self:mostLeft() >= other:mostLeft() and self:mostRight() <= other:mostRight()
 end
 
---- If `self` is within the top/bottom boundaries defined by `other`.
---- @within ElementQuad
 local function withinVerticalBoundsOf(self: ElementQuad, other: ElementQuad): boolean
 	return self:mostTop() >= other:mostTop() and self:mostBottom() <= other:mostBottom()
 end
 
---- If `self` is within the boundaries defined by `other`.
---- @within ElementQuad
 local function withinBoundsOf(self: ElementQuad, other: ElementQuad): boolean
 	return self:withinHorizontalBoundsOf(other) and self:withinVerticalBoundsOf(other)
 end

@@ -23,62 +23,29 @@ local Debugger = require("../protocol/Debugger")
 local Profiler = require("../protocol/Profiler")
 local Fetch = require("../protocol/Fetch")
 
---- A handle to a single page. Exposes methods for simulating user actions (clicking,
---- typing), and also for getting information about the DOM and other parts of the page.
---- @class Tab
 export type Tab = types.Tab
 
 export type Element = Element.Element
 export type ElementQuad = ElementQuad.ElementQuad
 export type BoxModel = BoxModel.BoxModel
 
---- @within Tab
 local function getTargetId(self: Tab): string
 	return self.targetId
 end
 
---- @within Tab
 local function updateTargetInfo(self: Tab, targetInfo: Target.TargetInfo)
 	self.targetInfo = targetInfo
 end
 
---- @within Tab
 local function getUrl(self: Tab): string
 	return self.targetInfo.url
 end
 
---- Set default timeout for the tab
---- This will be applied to all `waitForElement` and `waitForElements` calls without a timeout for this tab
---- @within Tab
 local function setDefaultTimeout(self: Tab, timeout: number): Tab
 	self.defaultTimeout = timeout
 	return self
 end
 
---[=[
-	Analogous to Puppeteer's ['slowMo' option](https://github.com/GoogleChrome/puppeteer/blob/v1.20.0/docs/api.md#puppeteerconnectoptions),
-	but with some differences:
-
-	* It doesn't add a delay after literally every message sent via the protocol, but instead
-	just for:
-		* clicking a specific point on the page (default: 100ms before moving the mouse, 250ms
-		before pressing and releasting mouse button)
-		* pressing a key (default: 25 ms)
-		* reloading the page (default: 100ms)
-		* closing a tab (default: 100ms)
-	* Instead of an absolute number of milliseconds, it's a multiplier, so that we can delay
-	longer on certain actions like clicking or moving the mouse, and shorter on others like
-	on pressing a key (or the individual 'mouseDown' and 'mouseUp' actions that go across the
-	wire. If the delay was always the same, filling out a form (e.g.) would take ages).
-
-	By default the multiplier is set to zero, which effectively disables the slow motion.
-
-	The defaults for the various actions (i.e. how long we sleep for when
-	multiplier is 1.0) are supposed to be just slow enough to help a human see what's going on
-	as a test runs.
-
-	@within Tab
-]=]
 local function setSlowMotionMultiplier(self: Tab, multiplier: number): Tab
 	self.slowMotionMultiplier = multiplier
 	return self
@@ -93,8 +60,6 @@ local function optionalSlowMotionSleep(self: Tab, millis: number)
 	task.wait(seconds * self.slowMotionMultiplier)
 end
 
---- Call a target method.
---- @within Tab
 local function callMethod<Request, Response>(
 	self: Tab,
 	method: string & { __Request: Request, __Response: Response },
@@ -103,8 +68,6 @@ local function callMethod<Request, Response>(
 	return self.transport:callMethodOnTarget(method, parameters, self.sessionId)
 end
 
---- Adds event listener to `event`
---- @within Tab
 local function addEventListener<Parameters>(
 	self: Tab,
 	event: string & { __Parameters: Parameters },
@@ -113,20 +76,15 @@ local function addEventListener<Parameters>(
 	return self.transport:listenToTargetEvent(event, self.sessionId, callback)
 end
 
---- Fetches the most recent info about this target
---- @within Tab
 local function getTargetInfo(self: Tab): Target.TargetInfo
 	return self.transport:callMethodOnBrowser(Target.GetTargetInfo, { targetId = self.targetId }).targetInfo
 end
 
---- @within Tab
 local function getBrowserContextId(self: Tab): string?
 	local targetInfo = self:getTargetInfo()
 	return targetInfo.browserContextId
 end
 
---- Allows overriding user agent with the given string.
---- @within Tab
 local function setUserAgent(self: Tab, userAgent: string, acceptLanguage: string?, platform: string?)
 	self:callMethod(
 		Network.SetUserAgentOverride,
@@ -134,62 +92,33 @@ local function setUserAgent(self: Tab, userAgent: string, acceptLanguage: string
 	)
 end
 
---- @within Tab
 local function setExtraHttpHeaders(self: Tab, headers: { [string]: string })
 	self:callMethod(Network.Enable, {})
 	self:callMethod(Network.SetExtraHTTPHeaders, { headers = headers })
 end
 
---- If enabled, instead of using the GUI to select files, the browser will
---- wait for the `handleFileChooser` method to be called.
---- \**WARNING**: Only works on Chromium / Chrome 77 and above.
---- @within Tab
 local function setFileChooserDialogInterception(self: Tab, enabled: boolean)
 	self:callMethod(Page.SetInterceptFileChooserDialog, { enabled = enabled })
 end
 
---[=[
-	Will have the same effect as choosing these files from the file chooser dialog that would've
-	popped up had `setFileChooserDialogInterception` not been called. Calls to this method
-	must be preceded by calls to that method.
-
-	Supports selecting files or closing the file chooser dialog.
-
-	NOTE: the filepaths listed in `files` must be absolute.
-
-	@within Tab
-]=]
 local function handleFileChooser(self: Tab, files: { string }, nodeId: DOM.NodeId)
 	self:callMethod(DOM.SetFileInputFiles, { files = files, nodeId = nodeId })
 end
 
---- Pulls focus to this tab
---- @within Tab
 local function bringToFront(self: Tab)
 	self:callMethod(Page.BringToFront)
 end
 
---[=[
-	Reloads given page optionally ignoring the cache
-
-	If `ignoreCache` is true, the browser cache is ignored (as if the user pressed Shift+F5).  
-	If `scriptToEvaluate` is given, the script will be injected into all frames of the
-	inspected page after reload. Argument will be ignored if reloading dataURL origin.
-
-	@within Tab
-]=]
 local function reload(self: Tab, ignoreCache: boolean?, scriptToEvaluateOnLoad: string?): Tab
 	optionalSlowMotionSleep(self, 100)
 	self:callMethod(Page.Reload, { ignoreCache = ignoreCache, scriptToEvaluateOnLoad = scriptToEvaluateOnLoad })
 	return self
 end
 
---- @within Tab
 local function stopLoading(self: Tab)
 	self:callMethod(Page.StopLoading)
 end
 
---- @within Tab
 local function navigateTo(self: Tab, url: string): Tab
 	self:callMethod(Page.Navigate, { url = url })
 	self.navigating = true
@@ -197,7 +126,6 @@ local function navigateTo(self: Tab, url: string): Tab
 	return self
 end
 
---- @within Tab
 local function waitUntilNavigated(self: Tab): Tab
 	Wait.withTimeout(self.defaultTimeout):pauseUntil(function()
 		return if self.navigating then Wait.None else nil
@@ -206,33 +134,15 @@ local function waitUntilNavigated(self: Tab): Tab
 	return self
 end
 
---- @within Tab
 local function waitUntilRedirect(self: Tab): Tab
 	self.navigating = true
 	return self:waitUntilNavigated()
 end
 
---[=[
-	Get position and size of the browser window associated with this `Tab`.
-
-	Note that the returned bounds are always specified for normal (windowed)
-	state; they do not change when minimizing, maximizing or setting to
-	fullscreen.
-
-	@within Tab
-]=]
 local function getBounds(self: Tab): Browser.Bounds
 	return self.transport:callMethodOnBrowser(Browser.GetWindowForTarget, { targetId = self.targetId }).bounds
 end
 
---[=[
-	Set position and/or size of the browser window associated with this `Tab`.
-
-	When setting the window to normal (windowed) state, unspecified fields
-	are left unchanged.
-
-	@within Tab
-]=]
 local function setBounds(self: Tab, bounds: Browser.Bounds): Tab
 	local windowId =
 		self.transport:callMethodOnBrowser(Browser.GetWindowForTarget, { targetId = self.targetId }).windowId
@@ -242,9 +152,6 @@ local function setBounds(self: Tab, bounds: Browser.Bounds): Tab
 	return self
 end
 
---- Set the background color of the dom to transparent.
---- Useful when you want capture a .png
---- @within Tab
 local function setTransparentBackgroundColor(self: Tab): Tab
 	self:callMethod(Emulation.SetDefaultBackgroundColorOverride, {
 		color = { r = 0, g = 0, b = 0, a = 0 },
@@ -252,16 +159,11 @@ local function setTransparentBackgroundColor(self: Tab): Tab
 	return self
 end
 
---- Set the default background color of the dom.
---- Pass a RGBA to override the backrgound color of the dom.
---- @within Tab
 local function setBackgroundColor(self: Tab, color: DOM.RGBA): Tab
 	self:callMethod(Emulation.SetDefaultBackgroundColorOverride, { color = color })
 	return self
 end
 
---- Evaluates expression on global object.
---- @within Tab
 local function evaluate(self: Tab, expression: string, awaitPromise: boolean?): Runtime.RemoteObject
 	return self:callMethod(Runtime.Evaluate, {
 		expression = expression,
@@ -274,15 +176,11 @@ local function evaluate(self: Tab, expression: string, awaitPromise: boolean?): 
 	}).result
 end
 
---- Returns the title of the document.
---- @within Tab
 local function getTitle(self: Tab): string
 	local result = self:evaluate("document.title")
 	return result.value :: string
 end
 
---- Set cookies with tab's current URL
---- @within Tab
 local function setCookies(self: Tab, cookies: { Network.CookieParam })
 	local url = self:getUrl()
 	local startsWithHttp = url:sub(1, 4) == "http"
@@ -302,14 +200,10 @@ local function setCookies(self: Tab, cookies: { Network.CookieParam })
 	self:callMethod(Network.SetCookies, { cookies = patchedCookies })
 end
 
---- Returns all cookies that match the tab's current URL.
---- @within Tab
 local function getCookies(self: Tab): { Network.Cookie }
 	return self:callMethod(Network.GetCookies, {}).cookies
 end
 
---- Delete cookies with tab's current URL
---- @within Tab
 local function deleteCookies(
 	self: Tab,
 	cookies: {
@@ -335,14 +229,12 @@ local function deleteCookies(
 	end
 end
 
---- @within Tab
 local function setStorage(self: Tab, name: string, item: any)
 	local json = serde.encode("json", item)
 	local value = if typeof(item) == "string" then json else `JSON.stringify({json})`
 	self:evaluate(`localStorage.setItem("{name}", {value})`)
 end
 
---- @within Tab
 local function getStorage(self: Tab, name: string): any?
 	local result = self:evaluate(`localStorage.getItem("{name}")`)
 	if result.type ~= "string" then
@@ -357,22 +249,10 @@ local function getStorage(self: Tab, name: string): any?
 	return result.value
 end
 
---- @within Tab
 local function removeStorage(self: Tab, name: string)
 	self:evaluate(`localStorage.removeItem("{name}")`)
 end
 
---[=[
-	Capture a screenshot of the current page.
-
-	If `clip` is given, the screenshot is taken of the specified region only.
-	`Element.getBoxModel` can be used to get regions of certains elements on the page; there is
-	also `Element.captureScreenshot` as a shorthand.
-
-	If `fromSurface` is true, the screenshot is taken from the surface rather than the view.
-
-	@within Tab
-]=]
 local function captureScreenshot(
 	self: Tab,
 	options: {
@@ -389,7 +269,6 @@ local function captureScreenshot(
 	return base64.decode(data)
 end
 
---- @within Tab
 local function printToPdf(
 	self: Tab,
 	options: {
@@ -416,7 +295,6 @@ local function printToPdf(
 	return base64.decode(data)
 end
 
---- @within Tab
 local function startScreencast(
 	self: Tab,
 	options: {
@@ -430,29 +308,22 @@ local function startScreencast(
 	self:callMethod(Page.StartScreencast, options)
 end
 
---- @within Tab
 local function stopScreencast(self: Tab)
 	self:callMethod(Page.StopScreencast)
 end
 
---- @within Tab
 local function ackScreencast(self: Tab, sessionId: number)
 	self:callMethod(Page.ScreencastFrameAck, { sessionId = sessionId })
 end
 
---- Get the handle of the dialog opened in this tab.
---- @within Tab
 local function getDialog(self: Tab): Dialog.Dialog
 	return Dialog.new(self.sessionId, self.transport)
 end
 
---- @within Tab
 local function getDocument(self: Tab): DOM.Node
 	return self:callMethod(DOM.GetDocument, { depth = 0, pierce = false }).root
 end
 
---- Get the full HTML contents of the page.
---- @within Tab
 local function getContent(self: Tab): string
 	local expression = [[
 		let content = "";
@@ -467,18 +338,15 @@ local function getContent(self: Tab): string
 	return html :: string
 end
 
---- @within Tab
 local function describeNode(self: Tab, nodeId: DOM.NodeId): DOM.Node
 	return self:callMethod(DOM.DescribeNode, { nodeId = nodeId, depth = 100 }).node
 end
 
---- @within Tab
 local function runQuerySelectorOnNode(self: Tab, nodeId: DOM.NodeId, selector: string): Element?
 	local nodeId = self:callMethod(DOM.QuerySelector, { nodeId = nodeId, selector = selector }).nodeId
 	return Element.new(self, nodeId)
 end
 
---- @within Tab
 local function runQuerySelectorAllOnNode(self: Tab, nodeId: DOM.NodeId, selector: string): { Element }
 	local nodeIds = self:callMethod(DOM.QuerySelectorAll, { nodeId = nodeId, selector = selector }).nodeIds
 
@@ -496,18 +364,11 @@ local function runQuerySelectorAllOnNode(self: Tab, nodeId: DOM.NodeId, selector
 	return elements
 end
 
---- Returns the first element in the document which matches the given selector.
---- Equivalent to the following JS:
---- ```js
---- document.querySelector(selector)
---- ```
---- @within Tab
 local function findElement(self: Tab, selector: string): Element?
 	local rootNodeId = self:getDocument().nodeId
 	return self:runQuerySelectorOnNode(rootNodeId, selector)
 end
 
---- @within Tab
 local function findElementByXPath(self: Tab, query: string): Element?
 	self:getDocument()
 
@@ -526,13 +387,11 @@ local function findElementByXPath(self: Tab, query: string): Element?
 	return Element.new(self, nodeId)
 end
 
---- @within Tab
 local function findElements(self: Tab, selector: string): { Element }
 	local rootNodeId = self:getDocument().nodeId
 	return self:runQuerySelectorAllOnNode(rootNodeId, selector)
 end
 
---- @within Tab
 local function findElementsByXPath(self: Tab, query: string): { Element }
 	self:getDocument()
 
@@ -562,7 +421,6 @@ local function findElementsByXPath(self: Tab, query: string): { Element }
 	return elements
 end
 
---- @within Tab
 local function waitForElement(self: Tab, selector: string, timeout: number?): Element
 	local timeout = timeout or self.defaultTimeout
 
@@ -576,7 +434,6 @@ local function waitForElement(self: Tab, selector: string, timeout: number?): El
 	end)
 end
 
---- @within Tab
 local function waitForXPath(self: Tab, selector: string, timeout: number?): Element
 	local timeout = timeout or self.defaultTimeout
 
@@ -590,7 +447,6 @@ local function waitForXPath(self: Tab, selector: string, timeout: number?): Elem
 	end)
 end
 
---- @within Tab
 local function waitForElements(self: Tab, selector: string, timeout: number?): { Element }
 	local timeout = timeout or self.defaultTimeout
 
@@ -604,7 +460,6 @@ local function waitForElements(self: Tab, selector: string, timeout: number?): {
 	end)
 end
 
---- @within Tab
 local function waitForElementsByXPath(self: Tab, selector: string, timeout: number?): { Element }
 	local timeout = timeout or self.defaultTimeout
 
@@ -618,8 +473,6 @@ local function waitForElementsByXPath(self: Tab, selector: string, timeout: numb
 	end)
 end
 
---- Moves the mouse to this point (dispatches a mouseMoved event)
---- @within Tab
 local function moveMouseToPoint(self: Tab, point: types.Point): Tab
 	optionalSlowMotionSleep(self, 100)
 
@@ -632,7 +485,6 @@ local function moveMouseToPoint(self: Tab, point: types.Point): Tab
 	return self
 end
 
---- @within Tab
 local function clickPoint(self: Tab, point: types.Point): Tab
 	self:moveMouseToPoint(point)
 
@@ -657,16 +509,11 @@ local function clickPoint(self: Tab, point: types.Point): Tab
 	return self
 end
 
---- Does the same as `typeText` but it only dispatches a `keypress` and `input` event.
---- It does not send a `keydown` or `keyup` event. What this means is that it is much faster.
---- It is especially useful when you have a lot of text as input.
---- @within Tab
 local function insertText(self: Tab, text: string): Tab
 	self:callMethod(Input.InsertText, { text = text })
 	return self
 end
 
---- @within Tab
 local function typeText(self: Tab, text: string): Tab
 	for _, char in text:split("") do
 		local definition = keys.getKeyDefinition(char :: keys.Key)
@@ -680,10 +527,6 @@ local function typeText(self: Tab, text: string): Tab
 	return self
 end
 
---- Press a key on the keyboard, optionally with some modifier keys.
---- See [this file](https://github.com/puppeteer/puppeteer/blob/62da2366c65b335751896afbb0206f23c61436f1/lib/USKeyboardLayout.js)
---- for a full definition of which strings correspond with which keys.
---- @within Tab
 local function pressKeyWithModifiers(self: Tab, key: keys.Key, modifiers: { "Alt" | "Ctrl" | "Meta" | "Shift" }?): Tab
 	local definition = keys.getKeyDefinition(key)
 	assert(definition ~= nil, "Invalid key")
@@ -730,171 +573,93 @@ local function pressKeyWithModifiers(self: Tab, key: keys.Key, modifiers: { "Alt
 	return self
 end
 
---- Press a key on the keyboard. See [this file](https://github.com/puppeteer/puppeteer/blob/62da2366c65b335751896afbb0206f23c61436f1/lib/USKeyboardLayout.js)
---- for a full definition of which strings correspond with which keys.
---- @within Tab
 local function pressKey(self: Tab, key: keys.Key): Tab
 	return self:pressKeyWithModifiers(key)
 end
 
---- Enables log domain.
---- Sends the entries collected so far to the client by means of the entryAdded notification.
---- See <https://chromedevtools.github.io/devtools-protocol/tot/Log#method-enable>.
---- @within Tab
 local function enableLog(self: Tab): Tab
 	self:callMethod(Log.Enable)
 	return self
 end
 
---- Disables log domain.
---- Prevents further log entries from being reported to the client.
---- See <https://chromedevtools.github.io/devtools-protocol/tot/Log#method-disable>.
---- @within Tab
 local function disableLog(self: Tab): Tab
 	self:callMethod(Log.Disable)
 	return self
 end
 
---- Starts violation reporting.
---- See <https://chromedevtools.github.io/devtools-protocol/tot/Log#method-startViolationsReport>.
---- @within Tab
 local function startViolationsReport(self: Tab, config: { Log.ViolationSetting }): Tab
 	self:callMethod(Log.StartViolationsReport, { config = config })
 	return self
 end
 
---- Stops violation reporting.
---- See <https://chromedevtools.github.io/devtools-protocol/tot/Log#method-stopViolationsReport>.
---- @within Tab
 local function stopViolationsReport(self: Tab): Tab
 	self:callMethod(Log.StopViolationsReport)
 	return self
 end
 
---- Enables runtime domain.
---- @within Tab
 local function enableRuntime(self: Tab): Tab
 	self:callMethod(Runtime.Enable)
 	return self
 end
 
---- Disables runtime domain.
---- @within Tab
 local function disableRuntime(self: Tab): Tab
 	self:callMethod(Runtime.Disable)
 	return self
 end
 
---- Enables debugger domain.
---- @within Tab
 local function enableDebugger(self: Tab): Tab
 	self:callMethod(Debugger.Enable, {})
 	return self
 end
 
---- Disables debugger domain.
---- @within Tab
 local function disableDebugger(self: Tab): Tab
 	self:callMethod(Debugger.Disable)
 	return self
 end
 
---- Returns source for the script with given id.
---- Debugger domain must be enabled.
---- @within Tab
 local function getScriptSource(self: Tab, scriptId: string): string
 	return self:callMethod(Debugger.GetScriptSource, { scriptId = scriptId }).scriptSource
 end
 
---- Enables the profiler domain.
---- @within Tab
 local function enableProfiler(self: Tab): Tab
 	self:callMethod(Profiler.Enable)
 	return self
 end
 
---- Disables the profiler domain.
---- @within Tab
 local function disableProfiler(self: Tab): Tab
 	self:callMethod(Profiler.Disable)
 	return self
 end
 
---[=[
-	Starts tracking which lines of JS have been executed
-
-	Will error unless `enableProfiler` has been called.
-
-	Equivalent to hitting the record button in the "coverage" tab in Chrome DevTools.
-
-	By default we enable the 'detailed' flag on StartPreciseCoverage, which enables block-level
-	granularity, and also enable 'callCount' (which when disabled always sets count to 1 or 0).
-
-	@within Tab
-]=]
 local function startJsCoverage(self: Tab): Tab
 	self:callMethod(Profiler.StartPreciseCoverage, { callCount = true, detailed = true })
 	return self
 end
 
---- Stops tracking which lines of JS have been executed.
---- If you're finished with the profiler, don't forget to call `disableProfiler`.
---- @within Tab
 local function stopJsCoverage(self: Tab): Tab
 	self:callMethod(Profiler.StopPreciseCoverage)
 	return self
 end
 
---[=[
-	Collect coverage data for the current isolate, and resets execution counters.
-
-	Precise code coverage needs to have started (see `startJsCoverage`).
-
-	Will only send information about code that's been executed since this method was last
-	called, or (if this is the first time) since calling `startJsCoverage`.
-	Another way of thinking about it is: every time you call this, the call counts for
-	FunctionRanges are reset after returning.
-
-	The format of the data is a little unintuitive, see here for details:
-	<https://chromedevtools.github.io/devtools-protocol/tot/Profiler#type-ScriptCoverage>
-
-	@within Tab
-]=]
 local function takeJsCoverage(self: Tab): { Profiler.ScriptCoverage }
 	return self:callMethod(Profiler.TakePreciseCoverage).result
 end
 
---- Enables fetch domain.
---- @within Tab
 local function enableFetch(self: Tab, patterns: { Fetch.RequestPattern }?, handleAuthRequests: boolean?): Tab
 	self:callMethod(Fetch.Enable, { patterns = patterns, handleAuthRequests = handleAuthRequests })
 	return self
 end
 
---- Disables fetch domain.
---- @within Tab
 local function disableFetch(self: Tab): Tab
 	self:callMethod(Fetch.Disable)
 	return self
 end
 
---[=[
-	Allows you to inspect outgoing network requests from the tab, and optionally return
-	your own responses to them
-
-	The `interceptor` argument is a closure which takes this tab's `Transport` and its SessionID
-	so that you can call methods from within the closure using `transport.callMethodOnTarget`.
-
-	The closure needs to return { action: "Fulfill" | "Fail" | "Continue", ... }.
-
-	@within Tab
-]=]
 local function enableRequestInterception(self: Tab, interceptor: types.RequestInterceptor)
 	self.requestInterceptor = interceptor
 end
 
---- @within Tab
-local function authenticate(self: Tab, username: string, password: string?): Tab
+local function authenticate(self: Tab, username: string?, password: string?): Tab
 	self.authHandler = {
 		response = "ProvideCredentials",
 		username = username,
@@ -984,7 +749,6 @@ local function bypassWebGlVendor(self: Tab)
 	})
 end
 
---- @within Tab
 local function enableStealthMode(self: Tab)
 	bypassUserAgent(self)
 	bypassWebDriver(self)
@@ -994,8 +758,6 @@ local function enableStealthMode(self: Tab)
 	bypassWebGlVendor(self)
 end
 
---- Closes the target Page
---- @within Tab
 local function close(self: Tab)
 	optionalSlowMotionSleep(self, 50)
 	self:callMethod(Target.CloseTarget, { targetId = self.targetId })
@@ -1046,7 +808,6 @@ local function handleTabLevelEvents(self: Tab)
 	end)
 end
 
---- @within Tab
 local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport): Tab
 	local targetId = targetInfo.targetId
 	local sessionId = transport:callMethodOnBrowser(Target.AttachToTarget, { targetId = targetId }).sessionId
