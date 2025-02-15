@@ -2,6 +2,7 @@ local process = require("@lune/process")
 local fs = require("@lune/fs")
 local serde = require("@lune/serde")
 local stdio = require("@lune/stdio")
+local casing = require("../src/utils/casing")
 
 type TypeDefinition = {
 	name: string,
@@ -48,12 +49,14 @@ local function stylua(input: string): string
 	return result.stdout
 end
 
-local function readJson(path: string): any
+local function read_json(path: string): any
 	local file = fs.readFile(path)
 	return serde.decode("json", file)
 end
 
-local function fixKey(key: string): string
+local function fix_key(key: string): string
+	key = casing.camel_to_snake(key)
+
 	if key == "function" or key == "end" then
 		return `["{key}"]`
 	end
@@ -61,11 +64,11 @@ local function fixKey(key: string): string
 	return key
 end
 
-local function translateType(definition: TypeDefinition): string
-	local optionalSuffix = if definition.optional then "?" else ""
+local function translate_type(definition: TypeDefinition): string
+	local optional_suffix = if definition.optional then "?" else ""
 
 	if definition["$ref"] ~= nil then
-		return definition["$ref"] .. optionalSuffix
+		return definition["$ref"] .. optional_suffix
 	end
 
 	if definition.enum ~= nil then
@@ -75,7 +78,7 @@ local function translateType(definition: TypeDefinition): string
 			table.insert(enum, `"{value}"`)
 		end
 
-		return table.concat(enum, "|") .. optionalSuffix
+		return table.concat(enum, "|") .. optional_suffix
 	end
 
 	if definition.type == "array" then
@@ -83,7 +86,7 @@ local function translateType(definition: TypeDefinition): string
 			return "{}"
 		end
 
-		return `\{ {translateType(definition.items)} \}` .. optionalSuffix
+		return `\{ {translate_type(definition.items)} \}` .. optional_suffix
 	end
 
 	if definition.type == "object" then
@@ -94,23 +97,23 @@ local function translateType(definition: TypeDefinition): string
 		local translated = "{"
 
 		for _, property in definition.properties do
-			translated ..= `{fixKey(property.name)}: {translateType(property)},`
+			translated ..= `{fix_key(property.name)}: {translate_type(property)},`
 		end
 
 		translated ..= "}"
 
-		return translated .. optionalSuffix
+		return translated .. optional_suffix
 	end
 
 	if definition.type == "integer" then
-		return "number" .. optionalSuffix
+		return "number" .. optional_suffix
 	end
 
-	assert(definition.type ~= nil, `Unsupported type: {stdio.format(definition)}`)
-	return definition.type .. optionalSuffix
+	assert(definition.type ~= nil, `unsupported type: {stdio.format(definition)}`)
+	return definition.type .. optional_suffix
 end
 
-local function writeDomainDefinition(domain: DomainDefinition): string
+local function write_domain_definition(domain: DomainDefinition): string
 	local file = ""
 
 	if domain.dependencies ~= nil then
@@ -121,7 +124,7 @@ local function writeDomainDefinition(domain: DomainDefinition): string
 
 	if domain.types ~= nil then
 		for _, type in domain.types do
-			file ..= `export type {type.id} = {translateType(type)}\n`
+			file ..= `export type {type.id} = {translate_type(type)}\n`
 		end
 	end
 
@@ -129,56 +132,56 @@ local function writeDomainDefinition(domain: DomainDefinition): string
 
 	if domain.commands ~= nil then
 		for _, command in domain.commands do
-			local requestType: string
+			local request_type: string
 
 			if command.parameters == nil then
-				requestType = "nil"
+				request_type = "nil"
 			else
-				requestType = "{"
+				request_type = "{"
 
 				for _, parameter in command.parameters do
-					requestType ..= `{fixKey(parameter.name)}: {translateType(parameter)},`
+					request_type ..= `{fix_key(parameter.name)}: {translate_type(parameter)},`
 				end
 
-				requestType ..= "}"
+				request_type ..= "}"
 			end
 
-			local responseType: string
+			local response_type: string
 			if command.returns == nil then
-				responseType = "nil"
+				response_type = "nil"
 			else
-				responseType = "{"
+				response_type = "{"
 
 				for _, ret in command.returns do
-					responseType ..= `{fixKey(ret.name)}: {translateType(ret)},`
+					response_type ..= `{fix_key(ret.name)}: {translate_type(ret)},`
 				end
 
-				responseType ..= "}"
+				response_type ..= "}"
 			end
 
-			local pascalName = command.name:sub(1, 1):upper() .. command.name:sub(2)
-			file ..= `{pascalName} = "{domain.domain}.{command.name}" :: string & \{ __Request: {requestType}, __Response: {responseType} \},`
+			local pascal_name = command.name:sub(1, 1):upper() .. command.name:sub(2)
+			file ..= `{pascal_name} = "{domain.domain}.{command.name}" :: string & \{ __Request: {request_type}, __Response: {response_type} \},`
 		end
 	end
 
 	if domain.events ~= nil then
 		for _, event in domain.events do
-			local paramsType: string
+			local params_type: string
 
 			if event.parameters == nil then
-				paramsType = "nil"
+				params_type = "nil"
 			else
-				paramsType = "{"
+				params_type = "{"
 
 				for _, parameter in event.parameters do
-					paramsType ..= `{fixKey(parameter.name)}: {translateType(parameter)},`
+					params_type ..= `{fix_key(parameter.name)}: {translate_type(parameter)},`
 				end
 
-				paramsType ..= "}"
+				params_type ..= "}"
 			end
 
-			local pascalName = event.name:sub(1, 1):upper() .. event.name:sub(2)
-			file ..= `{pascalName} = "{domain.domain}.{event.name}" :: string & \{ __Parameters: {paramsType} \},`
+			local pascal_name = event.name:sub(1, 1):upper() .. event.name:sub(2)
+			file ..= `{pascal_name} = "{domain.domain}.{event.name}" :: string & \{ __Parameters: {params_type} \},`
 		end
 	end
 
@@ -187,7 +190,7 @@ local function writeDomainDefinition(domain: DomainDefinition): string
 	return if FORMAT then stylua(file) else file
 end
 
-local function writeMethodFile(...: ProtocolDefinition): string
+local function write_method_file(...: ProtocolDefinition): string
 	local definitions = { ... }
 	local file = ""
 
@@ -209,8 +212,8 @@ local function writeMethodFile(...: ProtocolDefinition): string
 			end
 
 			for _, command in domain.commands do
-				local pascalName = command.name:sub(1, 1):upper() .. command.name:sub(2)
-				file ..= `{domain.domain}{pascalName} = {domain.domain}.{pascalName},`
+				local pascal_name = command.name:sub(1, 1):upper() .. command.name:sub(2)
+				file ..= `{domain.domain}{pascal_name} = {domain.domain}.{pascal_name},`
 			end
 		end
 	end
@@ -220,7 +223,7 @@ local function writeMethodFile(...: ProtocolDefinition): string
 	return if FORMAT then stylua(file) else file
 end
 
-local function writeEventFile(...: ProtocolDefinition): string
+local function write_event_file(...: ProtocolDefinition): string
 	local definitions = { ... }
 	local file = ""
 
@@ -242,8 +245,8 @@ local function writeEventFile(...: ProtocolDefinition): string
 			end
 
 			for _, event in domain.events do
-				local pascalName = event.name:sub(1, 1):upper() .. event.name:sub(2)
-				file ..= `{domain.domain}{pascalName} = {domain.domain}.{pascalName},`
+				local pascal_name = event.name:sub(1, 1):upper() .. event.name:sub(2)
+				file ..= `{domain.domain}{pascal_name} = {domain.domain}.{pascal_name},`
 			end
 		end
 	end
@@ -253,8 +256,8 @@ local function writeEventFile(...: ProtocolDefinition): string
 	return if FORMAT then stylua(file) else file
 end
 
-local browserDefinition = readJson(`{IN}/browser_protocol.json`) :: ProtocolDefinition
-local jsDefinition = readJson(`{IN}/js_protocol.json`) :: ProtocolDefinition
+local browser_definition = read_json(`{IN}/browser_protocol.json`) :: ProtocolDefinition
+local js_definition = read_json(`{IN}/js_protocol.json`) :: ProtocolDefinition
 
 if fs.isDir(OUT) then
 	fs.removeDir(OUT)
@@ -263,29 +266,29 @@ fs.writeDir(OUT)
 
 local log = `{stdio.color("cyan")}%s{stdio.color("reset")} {stdio.style("dim")}>{stdio.style("reset")} {OUT}/%s.luau`
 
-for _, domain in browserDefinition.domains do
-	local file = writeDomainDefinition(domain)
+for _, domain in browser_definition.domains do
+	local file = write_domain_definition(domain)
 	fs.writeFile(`{OUT}/{domain.domain}.luau`, file)
 
 	print(log:format(domain.domain, domain.domain))
 end
 
-for _, domain in jsDefinition.domains do
-	local file = writeDomainDefinition(domain)
+for _, domain in js_definition.domains do
+	local file = write_domain_definition(domain)
 	fs.writeFile(`{OUT}/{domain.domain}.luau`, file)
 
 	print(log:format(domain.domain, domain.domain))
 end
 
 do
-	local file = writeMethodFile(browserDefinition, jsDefinition)
+	local file = write_method_file(browser_definition, js_definition)
 	fs.writeFile(`{OUT}/method.luau`, file)
 
 	print(log:format("Method", "method"))
 end
 
 do
-	local file = writeEventFile(browserDefinition, jsDefinition)
+	local file = write_event_file(browser_definition, js_definition)
 	fs.writeFile(`{OUT}/event.luau`, file)
 
 	print(log:format("Event", "event"))

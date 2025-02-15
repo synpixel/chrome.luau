@@ -2,15 +2,15 @@ local types = require("./types")
 
 export type Context = types.Context
 
-local function getId(self: Context): string
+local function get_id(self: Context): string
 	return self.id
 end
 
-local function getTabs(self: Context): { types.Tab }
+local function get_tabs(self: Context): { types.Tab }
 	local tabs = {}
 
-	for _, tab in self.browser:getTabs() do
-		if tab:getBrowserContextId() == self.id then
+	for _, tab in self.browser:get_tabs() do
+		if tab:get_browser_context_id() == self.id then
 			table.insert(tabs, tab)
 		end
 	end
@@ -18,20 +18,20 @@ local function getTabs(self: Context): { types.Tab }
 	return tabs
 end
 
-local function newTab(self: Context): types.Tab
-	return self.browser:newTabWithOptions({
+local function new_tab(self: Context): types.Tab
+	return self.browser:new_tab_with_options({
 		url = "about:blank",
-		browserContextId = self.id,
+		browser_context_id = self.id,
 	})
 end
 
-local function new(browser: types.Browser, contextId: string): Context
+local function new(browser: types.Browser, context_id: string): Context
 	return {
-		id = contextId,
+		id = context_id,
 		browser = browser,
-		getId = getId,
-		getTabs = getTabs,
-		newTab = newTab,
+		get_id = get_id,
+		get_tabs = get_tabs,
+		new_tab = new_tab,
 	}
 end
 

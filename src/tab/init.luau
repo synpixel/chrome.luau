@@ -29,182 +29,185 @@ export type Element = Element.Element
 export type ElementQuad = ElementQuad.ElementQuad
 export type BoxModel = BoxModel.BoxModel
 
-local function getTargetId(self: Tab): string
-	return self.targetId
+local function get_target_id(self: Tab): string
+	return self.target_id
 end
 
-local function updateTargetInfo(self: Tab, targetInfo: Target.TargetInfo)
-	self.targetInfo = targetInfo
+local function update_target_info(self: Tab, target_info: Target.TargetInfo)
+	self.target_info = target_info
 end
 
-local function getUrl(self: Tab): string
-	return self.targetInfo.url
+local function get_url(self: Tab): string
+	return self.target_info.url
 end
 
-local function setDefaultTimeout(self: Tab, timeout: number): Tab
-	self.defaultTimeout = timeout
+local function set_default_timeout(self: Tab, timeout: number): Tab
+	self.default_timeout = timeout
 	return self
 end
 
-local function setSlowMotionMultiplier(self: Tab, multiplier: number): Tab
-	self.slowMotionMultiplier = multiplier
+local function set_slow_motion_multiplier(self: Tab, multiplier: number): Tab
+	self.slow_motion_multiplier = multiplier
 	return self
 end
 
-local function optionalSlowMotionSleep(self: Tab, millis: number)
-	if self.slowMotionMultiplier == 0 then
+local function optional_slow_motion_sleep(self: Tab, millis: number)
+	if self.slow_motion_multiplier == 0 then
 		return
 	end
 
 	local seconds = millis / 1000
-	task.wait(seconds * self.slowMotionMultiplier)
+	task.wait(seconds * self.slow_motion_multiplier)
 end
 
-local function callMethod<Request, Response>(
+local function call_method<Request, Response>(
 	self: Tab,
 	method: string & { __Request: Request, __Response: Response },
 	parameters: Request
 ): Response
-	return self.transport:callMethodOnTarget(method, parameters, self.sessionId)
+	return self.transport:call_method_on_target(method, parameters, self.session_id)
 end
 
-local function addEventListener<Parameters>(
+local function add_event_listener<Parameters>(
 	self: Tab,
 	event: string & { __Parameters: Parameters },
 	callback: (params: Parameters) -> ()
 ): () -> ()
-	return self.transport:listenToTargetEvent(event, self.sessionId, callback)
+	return self.transport:listen_to_target_event(event, self.session_id, callback)
 end
 
-local function getTargetInfo(self: Tab): Target.TargetInfo
-	return self.transport:callMethodOnBrowser(Target.GetTargetInfo, { targetId = self.targetId }).targetInfo
+local function get_target_info(self: Tab): Target.TargetInfo
+	return self.transport:call_method_on_browser(Target.GetTargetInfo, { target_id = self.target_id }).target_info
 end
 
-local function getBrowserContextId(self: Tab): string?
-	local targetInfo = self:getTargetInfo()
-	return targetInfo.browserContextId
+local function get_browser_context_id(self: Tab): string?
+	local target_info = self:get_target_info()
+	return target_info.browser_context_id
 end
 
-local function setUserAgent(self: Tab, userAgent: string, acceptLanguage: string?, platform: string?)
-	self:callMethod(
+local function set_user_agent(self: Tab, user_agent: string, accept_language: string?, platform: string?)
+	self:call_method(
 		Network.SetUserAgentOverride,
-		{ userAgent = userAgent, acceptLanguage = acceptLanguage, platform = platform }
+		{ user_agent = user_agent, accept_language = accept_language, platform = platform }
 	)
 end
 
-local function setExtraHttpHeaders(self: Tab, headers: { [string]: string })
-	self:callMethod(Network.Enable, {})
-	self:callMethod(Network.SetExtraHTTPHeaders, { headers = headers })
+local function set_extra_http_headers(self: Tab, headers: { [string]: string })
+	self:call_method(Network.Enable, {})
+	self:call_method(Network.SetExtraHTTPHeaders, { headers = headers })
 end
 
-local function setFileChooserDialogInterception(self: Tab, enabled: boolean)
-	self:callMethod(Page.SetInterceptFileChooserDialog, { enabled = enabled })
+local function set_file_chooser_dialog_interception(self: Tab, enabled: boolean)
+	self:call_method(Page.SetInterceptFileChooserDialog, { enabled = enabled })
 end
 
-local function handleFileChooser(self: Tab, files: { string }, nodeId: DOM.NodeId)
-	self:callMethod(DOM.SetFileInputFiles, { files = files, nodeId = nodeId })
+local function handle_file_chooser(self: Tab, files: { string }, node_id: DOM.NodeId)
+	self:call_method(DOM.SetFileInputFiles, { files = files, node_id = node_id })
 end
 
-local function bringToFront(self: Tab)
-	self:callMethod(Page.BringToFront)
+local function bring_to_front(self: Tab)
+	self:call_method(Page.BringToFront)
 end
 
-local function reload(self: Tab, ignoreCache: boolean?, scriptToEvaluateOnLoad: string?): Tab
-	optionalSlowMotionSleep(self, 100)
-	self:callMethod(Page.Reload, { ignoreCache = ignoreCache, scriptToEvaluateOnLoad = scriptToEvaluateOnLoad })
+local function reload(self: Tab, ignore_cache: boolean?, script_to_evaluate_on_load: string?): Tab
+	optional_slow_motion_sleep(self, 100)
+	self:call_method(
+		Page.Reload,
+		{ ignore_cache = ignore_cache, script_to_evaluate_on_load = script_to_evaluate_on_load }
+	)
 	return self
 end
 
-local function stopLoading(self: Tab)
-	self:callMethod(Page.StopLoading)
+local function stop_loading(self: Tab)
+	self:call_method(Page.StopLoading)
 end
 
-local function navigateTo(self: Tab, url: string): Tab
-	self:callMethod(Page.Navigate, { url = url })
+local function navigate_to(self: Tab, url: string): Tab
+	self:call_method(Page.Navigate, { url = url })
 	self.navigating = true
 
 	return self
 end
 
-local function waitUntilNavigated(self: Tab): Tab
-	Wait.withTimeout(self.defaultTimeout):pauseUntil(function()
+local function wait_until_navigated(self: Tab): Tab
+	Wait.with_timeout(self.default_timeout):pause_until(function()
 		return if self.navigating then Wait.None else nil
 	end)
 
 	return self
 end
 
-local function waitUntilRedirect(self: Tab): Tab
+local function wait_until_redirect(self: Tab): Tab
 	self.navigating = true
-	return self:waitUntilNavigated()
+	return self:wait_until_navigated()
 end
 
-local function getBounds(self: Tab): Browser.Bounds
-	return self.transport:callMethodOnBrowser(Browser.GetWindowForTarget, { targetId = self.targetId }).bounds
+local function get_bounds(self: Tab): Browser.Bounds
+	return self.transport:call_method_on_browser(Browser.GetWindowForTarget, { target_id = self.target_id }).bounds
 end
 
-local function setBounds(self: Tab, bounds: Browser.Bounds): Tab
-	local windowId =
-		self.transport:callMethodOnBrowser(Browser.GetWindowForTarget, { targetId = self.targetId }).windowId
+local function set_bounds(self: Tab, bounds: Browser.Bounds): Tab
+	local window_id =
+		self.transport:call_method_on_browser(Browser.GetWindowForTarget, { target_id = self.target_id }).window_id
 
-	self.transport:callMethodOnBrowser(Browser.SetWindowBounds, { windowId = windowId, bounds = bounds })
+	self.transport:call_method_on_browser(Browser.SetWindowBounds, { window_id = window_id, bounds = bounds })
 
 	return self
 end
 
-local function setTransparentBackgroundColor(self: Tab): Tab
-	self:callMethod(Emulation.SetDefaultBackgroundColorOverride, {
+local function set_transparent_background_color(self: Tab): Tab
+	self:call_method(Emulation.SetDefaultBackgroundColorOverride, {
 		color = { r = 0, g = 0, b = 0, a = 0 },
 	})
 	return self
 end
 
-local function setBackgroundColor(self: Tab, color: DOM.RGBA): Tab
-	self:callMethod(Emulation.SetDefaultBackgroundColorOverride, { color = color })
+local function set_background_color(self: Tab, color: DOM.RGBA): Tab
+	self:call_method(Emulation.SetDefaultBackgroundColorOverride, { color = color })
 	return self
 end
 
-local function evaluate(self: Tab, expression: string, awaitPromise: boolean?): Runtime.RemoteObject
-	return self:callMethod(Runtime.Evaluate, {
+local function evaluate(self: Tab, expression: string, await_promise: boolean?): Runtime.RemoteObject
+	return self:call_method(Runtime.Evaluate, {
 		expression = expression,
-		returnByValue = false,
-		generatePreview = true,
+		return_by_value = false,
+		generate_preview = true,
 		silent = false,
-		awaitPromise = awaitPromise,
-		includeCommandLineAPI = false,
-		userGesture = false,
+		await_promise = await_promise,
+		include_command_line_api = false,
+		user_gesture = false,
 	}).result
 end
 
-local function getTitle(self: Tab): string
+local function get_title(self: Tab): string
 	local result = self:evaluate("document.title")
 	return result.value :: string
 end
 
-local function setCookies(self: Tab, cookies: { Network.CookieParam })
-	local url = self:getUrl()
-	local startsWithHttp = url:sub(1, 4) == "http"
+local function set_cookies(self: Tab, cookies: { Network.CookieParam })
+	local url = self:get_url()
+	local starts_with_http = url:sub(1, 4) == "http"
 
-	local patchedCookies = {}
+	local patched_cookies = {}
 
 	for index, cookie in cookies do
-		if cookie.url == nil and startsWithHttp then
+		if cookie.url == nil and starts_with_http then
 			cookie = table.clone(cookie)
 			cookie.url = url
 		end
 
-		patchedCookies[index] = cookie
+		patched_cookies[index] = cookie
 	end
 
-	self:deleteCookies(patchedCookies :: any)
-	self:callMethod(Network.SetCookies, { cookies = patchedCookies })
+	self:delete_cookies(patched_cookies :: any)
+	self:call_method(Network.SetCookies, { cookies = patched_cookies })
 end
 
-local function getCookies(self: Tab): { Network.Cookie }
-	return self:callMethod(Network.GetCookies, {}).cookies
+local function get_cookies(self: Tab): { Network.Cookie }
+	return self:call_method(Network.GetCookies, {}).cookies
 end
 
-local function deleteCookies(
+local function delete_cookies(
 	self: Tab,
 	cookies: {
 		{
@@ -212,30 +215,30 @@ local function deleteCookies(
 			url: string?,
 			domain: string?,
 			path: string?,
-			partitionKey: Network.CookiePartitionKey?,
+			partition_key: Network.CookiePartitionKey?,
 		}
 	}
 )
-	local url = self:getUrl()
-	local startsWithHttp = url:sub(1, 4) == "http"
+	local url = self:get_url()
+	local starts_with_http = url:sub(1, 4) == "http"
 
 	for _, cookie in cookies do
-		if cookie.url == nil and startsWithHttp then
+		if cookie.url == nil and starts_with_http then
 			cookie = table.clone(cookie)
 			cookie.url = url
 		end
 
-		self:callMethod(Network.DeleteCookies, cookie)
+		self:call_method(Network.DeleteCookies, cookie)
 	end
 end
 
-local function setStorage(self: Tab, name: string, item: any)
+local function set_storage(self: Tab, name: string, item: any)
 	local json = serde.encode("json", item)
 	local value = if typeof(item) == "string" then json else `JSON.stringify({json})`
 	self:evaluate(`localStorage.setItem("{name}", {value})`)
 end
 
-local function getStorage(self: Tab, name: string): any?
+local function get_storage(self: Tab, name: string): any?
 	local result = self:evaluate(`localStorage.getItem("{name}")`)
 	if result.type ~= "string" then
 		return nil
@@ -249,82 +252,82 @@ local function getStorage(self: Tab, name: string): any?
 	return result.value
 end
 
-local function removeStorage(self: Tab, name: string)
+local function remove_storage(self: Tab, name: string)
 	self:evaluate(`localStorage.removeItem("{name}")`)
 end
 
-local function captureScreenshot(
+local function capture_screenshot(
 	self: Tab,
 	options: {
 		format: "jpeg" | "png" | "webp"?,
 		quality: number?,
 		clip: Page.Viewport?,
-		fromSurface: boolean?,
-		captureBeyondViewport: boolean?,
-		optimizeForSpeed: boolean?,
+		from_surface: boolean?,
+		capture_beyond_viewport: boolean?,
+		optimize_for_speed: boolean?,
 	}
 ): buffer
-	local screenshot = self:callMethod(Page.CaptureScreenshot, options)
+	local screenshot = self:call_method(Page.CaptureScreenshot, options)
 	local data = buffer.fromstring(screenshot.data)
 	return base64.decode(data)
 end
 
-local function printToPdf(
+local function print_to_pdf(
 	self: Tab,
 	options: {
 		landscape: boolean?,
-		displayHeaderFooter: boolean?,
-		printBackground: boolean?,
+		display_header_footer: boolean?,
+		print_background: boolean?,
 		scale: number?,
-		paperWidth: number?,
-		paperHeight: number?,
-		marginTop: number?,
-		marginBottom: number?,
-		marginLeft: number?,
-		marginRight: number?,
-		pageRanges: string?,
-		headerTemplate: string?,
-		footerTemplate: string?,
-		preferCSSPageSize: boolean?,
-		generateTaggedPDF: boolean?,
-		generateDocumentOutline: boolean?,
+		paper_width: number?,
+		paper_height: number?,
+		margin_top: number?,
+		margin_bottom: number?,
+		margin_left: number?,
+		margin_right: number?,
+		page_ranges: string?,
+		header_template: string?,
+		footer_template: string?,
+		prefer_csspage_size: boolean?,
+		generate_tagged_pdf: boolean?,
+		generate_document_outline: boolean?,
 	}?
 ): buffer
-	local pdf = self:callMethod(Page.PrintToPDF, options :: any or {})
+	local pdf = self:call_method(Page.PrintToPDF, options :: any or {})
 	local data = buffer.fromstring(pdf.data)
 	return base64.decode(data)
 end
 
-local function startScreencast(
+local function start_screencast(
 	self: Tab,
 	options: {
 		format: "jpeg" | "png"?,
 		quality: number?,
-		maxWidth: number?,
-		maxHeight: number?,
-		everyNthFrame: number?,
+		max_width: number?,
+		max_height: number?,
+		every_nth_frame: number?,
 	}
 )
-	self:callMethod(Page.StartScreencast, options)
+	self:call_method(Page.StartScreencast, options)
 end
 
-local function stopScreencast(self: Tab)
-	self:callMethod(Page.StopScreencast)
+local function stop_screencast(self: Tab)
+	self:call_method(Page.StopScreencast)
 end
 
-local function ackScreencast(self: Tab, sessionId: number)
-	self:callMethod(Page.ScreencastFrameAck, { sessionId = sessionId })
+local function ack_screencast(self: Tab, session_id: number)
+	self:call_method(Page.ScreencastFrameAck, { session_id = session_id })
 end
 
-local function getDialog(self: Tab): Dialog.Dialog
-	return Dialog.new(self.sessionId, self.transport)
+local function get_dialog(self: Tab): Dialog.Dialog
+	return Dialog.new(self.session_id, self.transport)
 end
 
-local function getDocument(self: Tab): DOM.Node
-	return self:callMethod(DOM.GetDocument, { depth = 0, pierce = false }).root
+local function get_document(self: Tab): DOM.Node
+	return self:call_method(DOM.GetDocument, { depth = 0, pierce = false }).root
 end
 
-local function getContent(self: Tab): string
+local function get_content(self: Tab): string
 	local expression = [[
 		let content = "";
         if (document.doctype)
@@ -338,22 +341,22 @@ local function getContent(self: Tab): string
 	return html :: string
 end
 
-local function describeNode(self: Tab, nodeId: DOM.NodeId): DOM.Node
-	return self:callMethod(DOM.DescribeNode, { nodeId = nodeId, depth = 100 }).node
+local function describe_node(self: Tab, node_id: DOM.NodeId): DOM.Node
+	return self:call_method(DOM.DescribeNode, { node_id = node_id, depth = 100 }).node
 end
 
-local function runQuerySelectorOnNode(self: Tab, nodeId: DOM.NodeId, selector: string): Element?
-	local nodeId = self:callMethod(DOM.QuerySelector, { nodeId = nodeId, selector = selector }).nodeId
-	return Element.new(self, nodeId)
+local function run_query_selector_on_node(self: Tab, node_id: DOM.NodeId, selector: string): Element?
+	local node_id = self:call_method(DOM.QuerySelector, { node_id = node_id, selector = selector }).node_id
+	return Element.new(self, node_id)
 end
 
-local function runQuerySelectorAllOnNode(self: Tab, nodeId: DOM.NodeId, selector: string): { Element }
-	local nodeIds = self:callMethod(DOM.QuerySelectorAll, { nodeId = nodeId, selector = selector }).nodeIds
+local function run_query_selector_all_on_node(self: Tab, node_id: DOM.NodeId, selector: string): { Element }
+	local node_ids = self:call_method(DOM.QuerySelectorAll, { node_id = node_id, selector = selector }).node_ids
 
 	local elements = {}
 
-	for _, nodeId in nodeIds do
-		local element = Element.new(self, nodeId)
+	for _, node_id in node_ids do
+		local element = Element.new(self, node_id)
 		if element == nil then
 			continue
 		end
@@ -364,53 +367,53 @@ local function runQuerySelectorAllOnNode(self: Tab, nodeId: DOM.NodeId, selector
 	return elements
 end
 
-local function findElement(self: Tab, selector: string): Element?
-	local rootNodeId = self:getDocument().nodeId
-	return self:runQuerySelectorOnNode(rootNodeId, selector)
+local function find_element(self: Tab, selector: string): Element?
+	local root_node_id = self:get_document().node_id
+	return self:run_query_selector_on_node(root_node_id, selector)
 end
 
-local function findElementByXPath(self: Tab, query: string): Element?
-	self:getDocument()
+local function find_element_by_xpath(self: Tab, query: string): Element?
+	self:get_document()
 
-	local search = self:callMethod(DOM.PerformSearch, { query = query })
-	if search.resultCount <= 0 then
+	local search = self:call_method(DOM.PerformSearch, { query = query })
+	if search.result_count <= 0 then
 		return nil
 	end
 
-	local results = self:callMethod(DOM.GetSearchResults, {
-		searchId = search.searchId,
-		fromIndex = 0,
-		toIndex = search.resultCount,
+	local results = self:call_method(DOM.GetSearchResults, {
+		search_id = search.search_id,
+		from_index = 0,
+		to_index = search.result_count,
 	})
 
-	local nodeId = results.nodeIds[1]
-	return Element.new(self, nodeId)
+	local node_id = results.node_ids[1]
+	return Element.new(self, node_id)
 end
 
-local function findElements(self: Tab, selector: string): { Element }
-	local rootNodeId = self:getDocument().nodeId
-	return self:runQuerySelectorAllOnNode(rootNodeId, selector)
+local function find_elements(self: Tab, selector: string): { Element }
+	local root_node_id = self:get_document().node_id
+	return self:run_query_selector_all_on_node(root_node_id, selector)
 end
 
-local function findElementsByXPath(self: Tab, query: string): { Element }
-	self:getDocument()
+local function find_elements_by_xpath(self: Tab, query: string): { Element }
+	self:get_document()
 
-	local search = self:callMethod(DOM.PerformSearch, { query = query })
-	if search.resultCount <= 0 then
+	local search = self:call_method(DOM.PerformSearch, { query = query })
+	if search.result_count <= 0 then
 		return {}
 	end
 
-	local results = self:callMethod(DOM.GetSearchResults, {
-		searchId = search.searchId,
-		fromIndex = 0,
-		toIndex = search.resultCount,
+	local results = self:call_method(DOM.GetSearchResults, {
+		search_id = search.search_id,
+		from_index = 0,
+		to_index = search.result_count,
 	})
 
-	local nodeIds = results.nodeIds
+	local node_ids = results.node_ids
 	local elements = {}
 
-	for _, nodeId in nodeIds do
-		local element = Element.new(self, nodeId)
+	for _, node_id in node_ids do
+		local element = Element.new(self, node_id)
 		if element == nil then
 			continue
 		end
@@ -421,11 +424,11 @@ local function findElementsByXPath(self: Tab, query: string): { Element }
 	return elements
 end
 
-local function waitForElement(self: Tab, selector: string, timeout: number?): Element
-	local timeout = timeout or self.defaultTimeout
+local function wait_for_element(self: Tab, selector: string, timeout: number?): Element
+	local timeout = timeout or self.default_timeout
 
-	return Wait.withTimeout(timeout):pauseUntil(function()
-		local element = self:findElement(selector)
+	return Wait.with_timeout(timeout):pause_until(function()
+		local element = self:find_element(selector)
 		if element == nil then
 			return Wait.None
 		end
@@ -434,11 +437,11 @@ local function waitForElement(self: Tab, selector: string, timeout: number?): El
 	end)
 end
 
-local function waitForXPath(self: Tab, selector: string, timeout: number?): Element
-	local timeout = timeout or self.defaultTimeout
+local function wait_for_xpath(self: Tab, selector: string, timeout: number?): Element
+	local timeout = timeout or self.default_timeout
 
-	return Wait.withTimeout(timeout):pauseUntil(function()
-		local element = self:findElementByXPath(selector)
+	return Wait.with_timeout(timeout):pause_until(function()
+		local element = self:find_element_by_xpath(selector)
 		if element == nil then
 			return Wait.None
 		end
@@ -447,11 +450,11 @@ local function waitForXPath(self: Tab, selector: string, timeout: number?): Elem
 	end)
 end
 
-local function waitForElements(self: Tab, selector: string, timeout: number?): { Element }
-	local timeout = timeout or self.defaultTimeout
+local function wait_for_elements(self: Tab, selector: string, timeout: number?): { Element }
+	local timeout = timeout or self.default_timeout
 
-	return Wait.withTimeout(timeout):pauseUntil(function()
-		local elements = self:findElements(selector)
+	return Wait.with_timeout(timeout):pause_until(function()
+		local elements = self:find_elements(selector)
 		if #elements <= 0 then
 			return Wait.None
 		end
@@ -460,11 +463,11 @@ local function waitForElements(self: Tab, selector: string, timeout: number?): {
 	end)
 end
 
-local function waitForElementsByXPath(self: Tab, selector: string, timeout: number?): { Element }
-	local timeout = timeout or self.defaultTimeout
+local function wait_for_elements_by_xpath(self: Tab, selector: string, timeout: number?): { Element }
+	local timeout = timeout or self.default_timeout
 
-	return Wait.withTimeout(timeout):pauseUntil(function()
-		local elements = self:findElementsByXPath(selector)
+	return Wait.with_timeout(timeout):pause_until(function()
+		local elements = self:find_elements_by_xpath(selector)
 		if #elements <= 0 then
 			return Wait.None
 		end
@@ -473,10 +476,10 @@ local function waitForElementsByXPath(self: Tab, selector: string, timeout: numb
 	end)
 end
 
-local function moveMouseToPoint(self: Tab, point: types.Point): Tab
-	optionalSlowMotionSleep(self, 100)
+local function move_mouse_to_point(self: Tab, point: types.Point): Tab
+	optional_slow_motion_sleep(self, 100)
 
-	self:callMethod(Input.DispatchMouseEvent, {
+	self:call_method(Input.DispatchMouseEvent, {
 		type = "mouseMoved",
 		x = point.x,
 		y = point.y,
@@ -485,54 +488,58 @@ local function moveMouseToPoint(self: Tab, point: types.Point): Tab
 	return self
 end
 
-local function clickPoint(self: Tab, point: types.Point): Tab
-	self:moveMouseToPoint(point)
+local function click_point(self: Tab, point: types.Point): Tab
+	self:move_mouse_to_point(point)
 
-	optionalSlowMotionSleep(self, 250)
+	optional_slow_motion_sleep(self, 250)
 
-	self:callMethod(Input.DispatchMouseEvent, {
+	self:call_method(Input.DispatchMouseEvent, {
 		type = "mousePressed",
 		x = point.x,
 		y = point.y,
 		button = "left",
-		clickCount = 1,
+		click_count = 1,
 	})
 
-	self:callMethod(Input.DispatchMouseEvent, {
+	self:call_method(Input.DispatchMouseEvent, {
 		type = "mouseReleased",
 		x = point.x,
 		y = point.y,
 		button = "left",
-		clickCount = 1,
+		click_count = 1,
 	})
 
 	return self
 end
 
-local function insertText(self: Tab, text: string): Tab
-	self:callMethod(Input.InsertText, { text = text })
+local function insert_text(self: Tab, text: string): Tab
+	self:call_method(Input.InsertText, { text = text })
 	return self
 end
 
-local function typeText(self: Tab, text: string): Tab
+local function type_text(self: Tab, text: string): Tab
 	for _, char in text:split("") do
-		local definition = keys.getKeyDefinition(char :: keys.Key)
+		local definition = keys.get_key_definition(char :: keys.Key)
 		if definition ~= nil then
-			self:pressKey(definition.key)
+			self:press_key(definition.key)
 		else
-			self:insertText(char)
+			self:insert_text(char)
 		end
 	end
 
 	return self
 end
 
-local function pressKeyWithModifiers(self: Tab, key: keys.Key, modifiers: { "Alt" | "Ctrl" | "Meta" | "Shift" }?): Tab
-	local definition = keys.getKeyDefinition(key)
+local function press_key_with_modifiers(
+	self: Tab,
+	key: keys.Key,
+	modifiers: { "Alt" | "Ctrl" | "Meta" | "Shift" }?
+): Tab
+	local definition = keys.get_key_definition(key)
 	assert(definition ~= nil, "Invalid key")
 
 	local text = if definition.text ~= nil then definition.text elseif #definition.key == 1 then definition.key else nil
-	local keyDownEvent: "char" | "keyDown" | "keyUp" | "rawKeyDown" = if text ~= nil then "keyDown" else "rawKeyDown"
+	local key_down_event: "char" | "keyDown" | "keyUp" | "rawKeyDown" = if text ~= nil then "keyDown" else "rawKeyDown"
 
 	local mods = 0
 	if modifiers ~= nil then
@@ -548,120 +555,120 @@ local function pressKeyWithModifiers(self: Tab, key: keys.Key, modifiers: { "Alt
 		end
 	end
 
-	optionalSlowMotionSleep(self, 25)
+	optional_slow_motion_sleep(self, 25)
 
-	self:callMethod(Input.DispatchKeyEvent, {
-		type = keyDownEvent,
+	self:call_method(Input.DispatchKeyEvent, {
+		type = key_down_event,
 		key = definition.key,
 		text = text,
 		code = definition.code,
-		windowsVirtualKeyCode = definition.keyCode,
-		nativeVirtualKeyCode = definition.keyCode,
+		windows_virtual_key_code = definition.key_code,
+		native_virtual_key_code = definition.key_code,
 		modifiers = mods,
 	})
 
-	self:callMethod(Input.DispatchKeyEvent, {
+	self:call_method(Input.DispatchKeyEvent, {
 		type = "keyUp",
 		key = definition.key,
 		text = text,
 		code = definition.code,
-		windowsVirtualKeyCode = definition.keyCode,
-		nativeVirtualKeyCode = definition.keyCode,
+		windows_virtual_key_code = definition.key_code,
+		native_virtual_key_code = definition.key_code,
 		modifiers = mods,
 	})
 
 	return self
 end
 
-local function pressKey(self: Tab, key: keys.Key): Tab
-	return self:pressKeyWithModifiers(key)
+local function press_key(self: Tab, key: keys.Key): Tab
+	return self:press_key_with_modifiers(key)
 end
 
-local function enableLog(self: Tab): Tab
-	self:callMethod(Log.Enable)
+local function enable_log(self: Tab): Tab
+	self:call_method(Log.Enable)
 	return self
 end
 
-local function disableLog(self: Tab): Tab
-	self:callMethod(Log.Disable)
+local function disable_log(self: Tab): Tab
+	self:call_method(Log.Disable)
 	return self
 end
 
-local function startViolationsReport(self: Tab, config: { Log.ViolationSetting }): Tab
-	self:callMethod(Log.StartViolationsReport, { config = config })
+local function start_violations_report(self: Tab, config: { Log.ViolationSetting }): Tab
+	self:call_method(Log.StartViolationsReport, { config = config })
 	return self
 end
 
-local function stopViolationsReport(self: Tab): Tab
-	self:callMethod(Log.StopViolationsReport)
+local function stop_violations_report(self: Tab): Tab
+	self:call_method(Log.StopViolationsReport)
 	return self
 end
 
-local function enableRuntime(self: Tab): Tab
-	self:callMethod(Runtime.Enable)
+local function enable_runtime(self: Tab): Tab
+	self:call_method(Runtime.Enable)
 	return self
 end
 
-local function disableRuntime(self: Tab): Tab
-	self:callMethod(Runtime.Disable)
+local function disable_runtime(self: Tab): Tab
+	self:call_method(Runtime.Disable)
 	return self
 end
 
-local function enableDebugger(self: Tab): Tab
-	self:callMethod(Debugger.Enable, {})
+local function enable_debugger(self: Tab): Tab
+	self:call_method(Debugger.Enable, {})
 	return self
 end
 
-local function disableDebugger(self: Tab): Tab
-	self:callMethod(Debugger.Disable)
+local function disable_debugger(self: Tab): Tab
+	self:call_method(Debugger.Disable)
 	return self
 end
 
-local function getScriptSource(self: Tab, scriptId: string): string
-	return self:callMethod(Debugger.GetScriptSource, { scriptId = scriptId }).scriptSource
+local function get_script_source(self: Tab, script_id: string): string
+	return self:call_method(Debugger.GetScriptSource, { script_id = script_id }).script_source
 end
 
-local function enableProfiler(self: Tab): Tab
-	self:callMethod(Profiler.Enable)
+local function enable_profiler(self: Tab): Tab
+	self:call_method(Profiler.Enable)
 	return self
 end
 
-local function disableProfiler(self: Tab): Tab
-	self:callMethod(Profiler.Disable)
+local function disable_profiler(self: Tab): Tab
+	self:call_method(Profiler.Disable)
 	return self
 end
 
-local function startJsCoverage(self: Tab): Tab
-	self:callMethod(Profiler.StartPreciseCoverage, { callCount = true, detailed = true })
+local function start_js_coverage(self: Tab): Tab
+	self:call_method(Profiler.StartPreciseCoverage, { call_count = true, detailed = true })
 	return self
 end
 
-local function stopJsCoverage(self: Tab): Tab
-	self:callMethod(Profiler.StopPreciseCoverage)
+local function stop_js_coverage(self: Tab): Tab
+	self:call_method(Profiler.StopPreciseCoverage)
 	return self
 end
 
-local function takeJsCoverage(self: Tab): { Profiler.ScriptCoverage }
-	return self:callMethod(Profiler.TakePreciseCoverage).result
+local function take_js_coverage(self: Tab): { Profiler.ScriptCoverage }
+	return self:call_method(Profiler.TakePreciseCoverage).result
 end
 
-local function enableFetch(self: Tab, patterns: { Fetch.RequestPattern }?, handleAuthRequests: boolean?): Tab
-	self:callMethod(Fetch.Enable, { patterns = patterns, handleAuthRequests = handleAuthRequests })
+local function enable_fetch(self: Tab, patterns: { Fetch.RequestPattern }?, handle_auth_requests: boolean?): Tab
+	self:call_method(Fetch.Enable, { patterns = patterns, handle_auth_requests = handle_auth_requests })
 	return self
 end
 
-local function disableFetch(self: Tab): Tab
-	self:callMethod(Fetch.Disable)
+local function disable_fetch(self: Tab): Tab
+	self:call_method(Fetch.Disable)
 	return self
 end
 
-local function enableRequestInterception(self: Tab, interceptor: types.RequestInterceptor)
-	self.requestInterceptor = interceptor
+local function enable_request_interception(self: Tab, interceptor: types.RequestInterceptor)
+	self.request_interceptor = interceptor
 end
 
 --- @within Tab
 local function authenticate(self: Tab, username: string?, password: string?): Tab
-	self.authHandler = {
+	self.auth_handler = {
 		response = "ProvideCredentials",
 		username = username,
 		password = password,
@@ -669,35 +676,35 @@ local function authenticate(self: Tab, username: string?, password: string?): Ta
 	return self
 end
 
-local function bypassUserAgent(self: Tab)
+local function bypass_user_agent(self: Tab)
 	local object = self:evaluate("window.navigator.userAgent", true)
-	local userAgent = object.value :: string?
+	local user_agent = object.value :: string?
 
-	if userAgent == nil then
+	if user_agent == nil then
 		return
 	end
 
-	userAgent = userAgent:gsub("HeadlessChrome/", "Chrome/")
+	user_agent = user_agent:gsub("HeadlessChrome/", "Chrome/")
 
 	local regex = Regex.new([[\(([^)]+)\)]])
-	userAgent = regex:replace(userAgent, "(Windows NT 10.0; Win64; x64)")
+	user_agent = regex:replace(user_agent, "(Windows NT 10.0; Win64; x64)")
 
-	self:setUserAgent(userAgent)
+	self:set_user_agent(user_agent)
 end
 
-local function bypassWebDriver(self: Tab)
-	self:callMethod(Page.AddScriptToEvaluateOnNewDocument, {
+local function bypass_web_driver(self: Tab)
+	self:call_method(Page.AddScriptToEvaluateOnNewDocument, {
 		source = 'Object.defineProperty(navigator, "webdriver", { get: () => undefined });',
 	})
 end
 
-local function bypassChrome(self: Tab)
-	self:callMethod(Page.AddScriptToEvaluateOnNewDocument, {
+local function bypass_chrome(self: Tab)
+	self:call_method(Page.AddScriptToEvaluateOnNewDocument, {
 		source = "window.chrome = { runtime: {} };",
 	})
 end
 
-local function bypassPermissions(self: Tab)
+local function bypass_permissions(self: Tab)
 	local source = [[
 		const originalQuery = window.navigator.permissions.query;
         window.navigator.permissions.__proto__.query = (parameters) =>
@@ -706,12 +713,12 @@ local function bypassPermissions(self: Tab)
             : originalQuery(parameters);
 	]]
 
-	self:callMethod(Page.AddScriptToEvaluateOnNewDocument, {
+	self:call_method(Page.AddScriptToEvaluateOnNewDocument, {
 		source = source,
 	})
 end
 
-local function bypassPlugins(self: Tab)
+local function bypass_plugins(self: Tab)
 	local source = [[
 		Object.defineProperty(navigator, "plugins", {
 			get: () => [
@@ -722,12 +729,12 @@ local function bypassPlugins(self: Tab)
 		});
 	]]
 
-	self:callMethod(Page.AddScriptToEvaluateOnNewDocument, {
+	self:call_method(Page.AddScriptToEvaluateOnNewDocument, {
 		source = source,
 	})
 end
 
-local function bypassWebGlVendor(self: Tab)
+local function bypass_webgl_vendor(self: Tab)
 	local source = [[
 		const getParameter = WebGLRenderingContext.getParameter;
         WebGLRenderingContext.prototype.getParameter = (parameter) => {
@@ -745,27 +752,27 @@ local function bypassWebGlVendor(self: Tab)
         };
 	]]
 
-	self:callMethod(Page.AddScriptToEvaluateOnNewDocument, {
+	self:call_method(Page.AddScriptToEvaluateOnNewDocument, {
 		source = source,
 	})
 end
 
-local function enableStealthMode(self: Tab)
-	bypassUserAgent(self)
-	bypassWebDriver(self)
-	bypassChrome(self)
-	bypassPermissions(self)
-	bypassPlugins(self)
-	bypassWebGlVendor(self)
+local function enable_stealth_mode(self: Tab)
+	bypass_user_agent(self)
+	bypass_web_driver(self)
+	bypass_chrome(self)
+	bypass_permissions(self)
+	bypass_plugins(self)
+	bypass_webgl_vendor(self)
 end
 
 local function close(self: Tab)
-	optionalSlowMotionSleep(self, 50)
-	self:callMethod(Target.CloseTarget, { targetId = self.targetId })
+	optional_slow_motion_sleep(self, 50)
+	self:call_method(Target.CloseTarget, { target_id = self.target_id })
 end
 
-local function handleTabLevelEvents(self: Tab)
-	self:addEventListener(Page.LifecycleEvent, function(event)
+local function handle_tab_level_events(self: Tab)
+	self:add_event_listener(Page.LifecycleEvent, function(event)
 		if event.name == "networkAlmostIdle" then
 			self.navigating = false
 		elseif event.name == "init" then
@@ -773,138 +780,138 @@ local function handleTabLevelEvents(self: Tab)
 		end
 	end)
 
-	self:addEventListener(Fetch.RequestPaused, function(params)
-		local interceptor = self.requestInterceptor
+	self:add_event_listener(Fetch.RequestPaused, function(params)
+		local interceptor = self.request_interceptor
 		if interceptor == nil then
-			self:callMethod(Fetch.ContinueRequest, { requestId = params.requestId })
+			self:call_method(Fetch.ContinueRequest, { request_id = params.request_id })
 			return
 		end
 
-		local decision = interceptor(self.transport, self.sessionId, params)
+		local decision = interceptor(self.transport, self.session_id, params)
 
 		if decision.action == "Continue" then
-			if (decision :: any).requestId ~= nil then
-				self:callMethod(Fetch.ContinueRequest, decision :: any)
+			if (decision :: any).request_id ~= nil then
+				self:call_method(Fetch.ContinueRequest, decision :: any)
 			else
-				self:callMethod(Fetch.ContinueRequest, { requestId = params.requestId })
+				self:call_method(Fetch.ContinueRequest, { request_id = params.request_id })
 			end
 		elseif decision.action == "Fulfill" then
-			self:callMethod(Fetch.FulfillRequest, decision)
+			self:call_method(Fetch.FulfillRequest, decision)
 		elseif decision.action == "Fail" then
-			self:callMethod(Fetch.FailRequest, decision)
+			self:call_method(Fetch.FailRequest, decision)
 		end
 	end)
 
-	self:addEventListener(Fetch.AuthRequired, function(params)
-		local response = self.authHandler
+	self:add_event_listener(Fetch.AuthRequired, function(params)
+		local response = self.auth_handler
 		if response == nil then
 			return
 		end
 
-		local requestId = params.requestId
-		self:callMethod(Fetch.ContinueWithAuth, {
-			requestId = requestId,
-			authChallengeResponse = response,
+		local request_id = params.request_id
+		self:call_method(Fetch.ContinueWithAuth, {
+			request_id = request_id,
+			auth_challenge_response = response,
 		})
 	end)
 end
 
-local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport): Tab
-	local targetId = targetInfo.targetId
-	local sessionId = transport:callMethodOnBrowser(Target.AttachToTarget, { targetId = targetId }).sessionId
+local function new(target_info: Target.TargetInfo, transport: Transport.Transport): Tab
+	local target_id = target_info.target_id
+	local session_id = transport:call_method_on_browser(Target.AttachToTarget, { target_id = target_id }).session_id
 
 	local tab = {
-		targetId = targetId,
+		target_id = target_id,
 		transport = transport,
-		sessionId = sessionId,
+		session_id = session_id,
 		navigating = false,
-		targetInfo = targetInfo,
-		requestInterceptor = nil,
-		authHandler = nil,
-		defaultTimeout = 20,
-		slowMotionMultiplier = 0,
-		getTargetId = getTargetId,
-		updateTargetInfo = updateTargetInfo,
-		getUrl = getUrl,
-		setDefaultTimeout = setDefaultTimeout,
-		setSlowMotionMultiplier = setSlowMotionMultiplier,
-		callMethod = callMethod,
-		addEventListener = addEventListener,
-		getTargetInfo = getTargetInfo,
-		getBrowserContextId = getBrowserContextId,
-		setUserAgent = setUserAgent,
-		setExtraHttpHeaders = setExtraHttpHeaders,
-		setFileChooserDialogInterception = setFileChooserDialogInterception,
-		handleFileChooser = handleFileChooser,
-		bringToFront = bringToFront,
+		target_info = target_info,
+		request_interceptor = nil,
+		auth_handler = nil,
+		default_timeout = 20,
+		slow_motion_multiplier = 0,
+		get_target_id = get_target_id,
+		update_target_info = update_target_info,
+		get_url = get_url,
+		set_default_timeout = set_default_timeout,
+		set_slow_motion_multiplier = set_slow_motion_multiplier,
+		call_method = call_method,
+		add_event_listener = add_event_listener,
+		get_target_info = get_target_info,
+		get_browser_context_id = get_browser_context_id,
+		set_user_agent = set_user_agent,
+		set_extra_http_headers = set_extra_http_headers,
+		set_file_chooser_dialog_interception = set_file_chooser_dialog_interception,
+		handle_file_chooser = handle_file_chooser,
+		bring_to_front = bring_to_front,
 		reload = reload,
-		stopLoading = stopLoading,
-		navigateTo = navigateTo,
-		waitUntilNavigated = waitUntilNavigated,
-		waitUntilRedirect = waitUntilRedirect,
-		getBounds = getBounds,
-		setBounds = setBounds,
-		setTransparentBackgroundColor = setTransparentBackgroundColor,
-		setBackgroundColor = setBackgroundColor,
+		stop_loading = stop_loading,
+		navigate_to = navigate_to,
+		wait_until_navigated = wait_until_navigated,
+		wait_until_redirect = wait_until_redirect,
+		get_bounds = get_bounds,
+		set_bounds = set_bounds,
+		set_transparent_background_color = set_transparent_background_color,
+		set_background_color = set_background_color,
 		evaluate = evaluate,
-		getTitle = getTitle,
-		setCookies = setCookies,
-		getCookies = getCookies,
-		deleteCookies = deleteCookies,
-		setStorage = setStorage,
-		getStorage = getStorage,
-		removeStorage = removeStorage,
-		captureScreenshot = captureScreenshot,
-		printToPdf = printToPdf,
-		startScreencast = startScreencast,
-		stopScreencast = stopScreencast,
-		ackScreencast = ackScreencast,
-		getDialog = getDialog,
-		getDocument = getDocument,
-		getContent = getContent,
-		describeNode = describeNode,
-		runQuerySelectorOnNode = runQuerySelectorOnNode,
-		runQuerySelectorAllOnNode = runQuerySelectorAllOnNode,
-		findElement = findElement,
-		findElementByXPath = findElementByXPath,
-		findElements = findElements,
-		findElementsByXPath = findElementsByXPath,
-		waitForElement = waitForElement,
-		waitForXPath = waitForXPath,
-		waitForElements = waitForElements,
-		waitForElementsByXPath = waitForElementsByXPath,
-		moveMouseToPoint = moveMouseToPoint,
-		clickPoint = clickPoint,
-		insertText = insertText,
-		typeText = typeText,
-		pressKeyWithModifiers = pressKeyWithModifiers,
-		pressKey = pressKey,
-		enableLog = enableLog,
-		disableLog = disableLog,
-		startViolationsReport = startViolationsReport,
-		stopViolationsReport = stopViolationsReport,
-		enableRuntime = enableRuntime,
-		disableRuntime = disableRuntime,
-		enableDebugger = enableDebugger,
-		disableDebugger = disableDebugger,
-		getScriptSource = getScriptSource,
-		enableProfiler = enableProfiler,
-		disableProfiler = disableProfiler,
-		startJsCoverage = startJsCoverage,
-		stopJsCoverage = stopJsCoverage,
-		takeJsCoverage = takeJsCoverage,
-		enableFetch = enableFetch,
-		disableFetch = disableFetch,
-		enableRequestInterception = enableRequestInterception,
+		get_title = get_title,
+		set_cookies = set_cookies,
+		get_cookies = get_cookies,
+		delete_cookies = delete_cookies,
+		set_storage = set_storage,
+		get_storage = get_storage,
+		remove_storage = remove_storage,
+		capture_screenshot = capture_screenshot,
+		print_to_pdf = print_to_pdf,
+		start_screencast = start_screencast,
+		stop_screencast = stop_screencast,
+		ack_screencast = ack_screencast,
+		get_dialog = get_dialog,
+		get_document = get_document,
+		get_content = get_content,
+		describe_node = describe_node,
+		run_query_selector_on_node = run_query_selector_on_node,
+		run_query_selector_all_on_node = run_query_selector_all_on_node,
+		find_element = find_element,
+		find_element_by_xpath = find_element_by_xpath,
+		find_elements = find_elements,
+		find_elements_by_xpath = find_elements_by_xpath,
+		wait_for_element = wait_for_element,
+		wait_for_xpath = wait_for_xpath,
+		wait_for_elements = wait_for_elements,
+		wait_for_elements_by_xpath = wait_for_elements_by_xpath,
+		move_mouse_to_point = move_mouse_to_point,
+		click_point = click_point,
+		insert_text = insert_text,
+		type_text = type_text,
+		press_key_with_modifiers = press_key_with_modifiers,
+		press_key = press_key,
+		enable_log = enable_log,
+		disable_log = disable_log,
+		start_violations_report = start_violations_report,
+		stop_violations_report = stop_violations_report,
+		enable_runtime = enable_runtime,
+		disable_runtime = disable_runtime,
+		enable_debugger = enable_debugger,
+		disable_debugger = disable_debugger,
+		get_script_source = get_script_source,
+		enable_profiler = enable_profiler,
+		disable_profiler = disable_profiler,
+		start_js_coverage = start_js_coverage,
+		stop_js_coverage = stop_js_coverage,
+		take_js_coverage = take_js_coverage,
+		enable_fetch = enable_fetch,
+		disable_fetch = disable_fetch,
+		enable_request_interception = enable_request_interception,
 		authenticate = authenticate,
-		enableStealthMode = enableStealthMode,
+		enable_stealth_mode = enable_stealth_mode,
 		close = close,
 	}
 
-	tab:callMethod(Page.Enable)
-	tab:callMethod(Page.SetLifecycleEventsEnabled, { enabled = true })
+	tab:call_method(Page.Enable)
+	tab:call_method(Page.SetLifecycleEventsEnabled, { enabled = true })
 
-	handleTabLevelEvents(tab)
+	handle_tab_level_events(tab)
 
 	return tab
 end

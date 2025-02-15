@@ -4,13 +4,13 @@ local fs = require("@lune/fs")
 local NUM_RANDOM_CHARS = 6
 local NUM_RETRIES = 2 ^ 31
 
-local function assertTemp(): string
+local function assert_temp(): string
 	assert(process.env.TEMP ~= nil, "Missing TEMP")
 	assert(fs.isDir(process.env.TEMP), "TEMP is not a directory")
 	return process.env.TEMP
 end
 
-local function charactersBetween(a: string, b: string): () -> string?
+local function characters_between(a: string, b: string): () -> string?
 	local index = string.byte(a)
 	local finish = string.byte(b)
 
@@ -29,15 +29,15 @@ end
 local function tempname(prefix: string, length: number): string
 	local charset = {}
 
-	for uppercase in charactersBetween("A", "Z") do
+	for uppercase in characters_between("A", "Z") do
 		table.insert(charset, uppercase)
 	end
 
-	for lowercase in charactersBetween("a", "z") do
+	for lowercase in characters_between("a", "z") do
 		table.insert(charset, lowercase)
 	end
 
-	for digit in charactersBetween("0", "9") do
+	for digit in characters_between("0", "9") do
 		table.insert(charset, digit)
 	end
 
@@ -52,7 +52,7 @@ local function tempname(prefix: string, length: number): string
 end
 
 local function tempfile(prefix: string): string
-	local temp = assertTemp()
+	local temp = assert_temp()
 
 	for _ = 0, NUM_RETRIES do
 		local name = tempname(prefix, NUM_RANDOM_CHARS)

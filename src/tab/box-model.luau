@@ -3,40 +3,40 @@ local Page = require("../protocol/Page")
 
 export type BoxModel = types.BoxModel
 
-local function contentViewport(self: BoxModel): Page.Viewport
+local function content_viewport(self: BoxModel): Page.Viewport
 	return {
-		x = self.content.topLeft.x,
-		y = self.content.topLeft.y,
+		x = self.content.top_left.x,
+		y = self.content.top_left.y,
 		width = self.content:width(),
 		height = self.content:height(),
 		scale = 1,
 	}
 end
 
-local function paddingViewport(self: BoxModel): Page.Viewport
+local function padding_viewport(self: BoxModel): Page.Viewport
 	return {
-		x = self.padding.topLeft.x,
-		y = self.padding.topLeft.y,
+		x = self.padding.top_left.x,
+		y = self.padding.top_left.y,
 		width = self.padding:width(),
 		height = self.padding:height(),
 		scale = 1,
 	}
 end
 
-local function borderViewport(self: BoxModel): Page.Viewport
+local function border_viewport(self: BoxModel): Page.Viewport
 	return {
-		x = self.border.topLeft.x,
-		y = self.border.topLeft.y,
+		x = self.border.top_left.x,
+		y = self.border.top_left.y,
 		width = self.border:width(),
 		height = self.border:height(),
 		scale = 1,
 	}
 end
 
-local function marginViewport(self: BoxModel): Page.Viewport
+local function margin_viewport(self: BoxModel): Page.Viewport
 	return {
-		x = self.margin.topLeft.x,
-		y = self.margin.topLeft.y,
+		x = self.margin.top_left.x,
+		y = self.margin.top_left.y,
 		width = self.margin:width(),
 		height = self.margin:height(),
 		scale = 1,
@@ -44,7 +44,7 @@ local function marginViewport(self: BoxModel): Page.Viewport
 end
 
 --- @within BoxModel
-local function new(boxModel: {
+local function new(box_model: {
 	content: types.ElementQuad,
 	padding: types.ElementQuad,
 	border: types.ElementQuad,
@@ -53,16 +53,16 @@ local function new(boxModel: {
 	height: number,
 }): BoxModel
 	return {
-		content = boxModel.content,
-		padding = boxModel.padding,
-		border = boxModel.border,
-		margin = boxModel.margin,
-		width = boxModel.width,
-		height = boxModel.height,
-		contentViewport = contentViewport,
-		paddingViewport = paddingViewport,
-		borderViewport = borderViewport,
-		marginViewport = marginViewport,
+		content = box_model.content,
+		padding = box_model.padding,
+		border = box_model.border,
+		margin = box_model.margin,
+		width = box_model.width,
+		height = box_model.height,
+		content_viewport = content_viewport,
+		padding_viewport = padding_viewport,
+		border_viewport = border_viewport,
+		margin_viewport = margin_viewport,
 	}
 end
 
