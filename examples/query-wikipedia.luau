@@ -9,7 +9,7 @@ local function query(input: string)
 	local tab = browser:new_tab()
 
 	tab:navigate_to("https://en.wikipedia.org"):wait_until_navigated():wait_for_element("input#searchInput"):click()
-	tab:type_text(input):press_key("Enter"):wait_until_redirect()
+	tab:type_text(input):press_key("Enter"):wait_for_redirect()
 
 	local short_description = tab:find_element("div.shortdescription")
 	if short_description == nil then
