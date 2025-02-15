@@ -134,7 +134,7 @@ local function waitUntilNavigated(self: Tab): Tab
 	return self
 end
 
-local function waitUntilRedirect(self: Tab): Tab
+local function waitForRedirect(self: Tab): Tab
 	self.navigating = true
 	return self:waitUntilNavigated()
 end
@@ -841,7 +841,7 @@ local function new(targetInfo: Target.TargetInfo, transport: Transport.Transport
 		stopLoading = stopLoading,
 		navigateTo = navigateTo,
 		waitUntilNavigated = waitUntilNavigated,
-		waitUntilRedirect = waitUntilRedirect,
+		waitForRedirect = waitForRedirect,
 		getBounds = getBounds,
 		setBounds = setBounds,
 		setTransparentBackgroundColor = setTransparentBackgroundColor,

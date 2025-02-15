@@ -244,7 +244,7 @@ export type Tab = {
 	waitUntilNavigated: (self: Tab) -> Tab,
 
 	--- @within Tab
-	waitUntilRedirect: (self: Tab) -> Tab,
+	waitForRedirect: (self: Tab) -> Tab,
 
 	--[=[
 		Get position and size of the browser window associated with this `Tab`.

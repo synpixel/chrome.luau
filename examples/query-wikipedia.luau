@@ -9,7 +9,7 @@ local function query(input: string)
 	local tab = browser:newTab()
 
 	tab:navigateTo("https://en.wikipedia.org"):waitUntilNavigated():waitForElement("input#searchInput"):click()
-	tab:typeText(input):pressKey("Enter"):waitUntilRedirect()
+	tab:typeText(input):pressKey("Enter"):waitForRedirect()
 
 	local shortDescription = tab:findElement("div.shortdescription")
 	if shortDescription == nil then
