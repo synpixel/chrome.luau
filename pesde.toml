@@ -1,5 +1,5 @@
 name = "synpixel/chrome_snake_case"
-version = "0.2.5"
+version = "0.2.6"
 description = "A port of rust-headless-chrome to Luau, built for Lune"
 authors = ["synpixel"]
 license = "MIT"
