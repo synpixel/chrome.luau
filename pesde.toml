@@ -18,3 +18,6 @@ default = "https://github.com/daimond113/pesde-index"
 
 [dev_dependencies]
 stylua = { name = "pesde/stylua", version = "^2.0.2" }
+
+[dependencies]
+base64 = { name = "synpixel/base64", version = "^3.0.1", target = "luau" }
