@@ -14,12 +14,12 @@ local Fetch = require("./protocol/Fetch")
 --[=[
 	A handle to an instance of Chrome / Chromium, which wraps a WebSocket connection to its debugging port.
 
-	Most of your actual "driving" (e.g. clicking, typing, navigating) will be via instances of [Tab](../api/Tab), which are accessible via methods such as `getTabs`.
+	Most of your actual "driving" (e.g. clicking, typing, navigating) will be via instances of [Tab](../api/Tab), which are accessible via methods such as `get_tabs`.
 
 	A Browser can either manage its own Chrome process or connect to a remote one.
 
 	`Browser.new()` will return a headless instance of whatever browser can be found using
-	`defaultExecutable`, which will search on your PATH for relevant binaries or use the path
+	`default_executable`, which will search on your PATH for relevant binaries or use the path
 	specified in the `CHROME` env var.
 
 	@class Browser
@@ -29,11 +29,11 @@ export type Browser = {
 	tabs: { Tab },
 
 	--- @within Browser
-	getTabs: (self: Browser) -> { Tab },
+	get_tabs: (self: Browser) -> { Tab },
 
 	--- Call a browser method.
 	--- @within Browser
-	callMethod: <Request, Response>(
+	call_method: <Request, Response>(
 		self: Browser,
 		method: string & { __Request: Request, __Response: Response },
 		params: Request
@@ -41,7 +41,7 @@ export type Browser = {
 
 	--- Adds event listener to `event`
 	--- @within Browser
-	addEventListener: <Parameters>(
+	add_event_listener: <Parameters>(
 		self: Browser,
 		event: string & { __Parameters: Parameters },
 		callback: (params: Parameters) -> ()
@@ -49,44 +49,44 @@ export type Browser = {
 
 	--- Get version information
 	--- @within Browser
-	getVersion: (
+	get_version: (
 		self: Browser
 	) -> {
-		protocolVersion: string,
+		protocol_version: string,
 		product: string,
 		revision: string,
-		userAgent: string,
-		jsVersion: string,
+		user_agent: string,
+		js_version: string,
 	},
 
 	--- Create a new tab with a starting url, height / width, context ID and 'frame control'
 	--- @within Browser
-	newTabWithOptions: (
+	new_tab_with_options: (
 		self: Browser,
 		options: {
 			url: string,
 			width: number?,
 			height: number?,
-			browserContextId: Browser.BrowserContextID?,
-			enableBeginFrameControl: boolean?,
-			newWindow: boolean?,
+			browser_context_id: Browser.BrowserContextID?,
+			enable_begin_frame_control: boolean?,
+			new_window: boolean?,
 			background: boolean?,
-			forTab: boolean?,
+			for_tab: boolean?,
 		}
 	) -> Tab,
 
 	--- Create a new tab and return a handle to it.
-	--- If you want to specify its starting options, see `newTabWithOptions`.
+	--- If you want to specify its starting options, see `new_tab_with_options`.
 	--- @within Browser
-	newTab: (self: Browser) -> Tab,
+	new_tab: (self: Browser) -> Tab,
 
 	--- Creates the equivalent of a new incognito window, AKA a browser context
 	--- @within Browser
-	newContext: (self: Browser) -> Context,
+	new_context: (self: Browser) -> Context,
 
-	--- Adds tabs that have not been opened with `newTab` to the list of tabs
+	--- Adds tabs that have not been opened with `new_tab` to the list of tabs
 	--- @within Browser
-	registerMissingTabs: (self: Browser) -> (),
+	register_missing_tabs: (self: Browser) -> (),
 
 	--- Closes the browser.
 	--- @within Browser
@@ -101,48 +101,48 @@ export type Context = {
 
 	--- The BrowserContextId associated with this context
 	--- @within Context
-	getId: (self: Context) -> string,
+	get_id: (self: Context) -> string,
 
 	--- Any tabs created in this context
 	--- @within Context
-	getTabs: (self: Context) -> { Tab },
+	get_tabs: (self: Context) -> { Tab },
 
 	--- Opens a new tab in this context. It will not share cookies or a cache with the default
 	--- browsing context or any other contexts created
 	--- @within Context
-	newTab: (self: Context) -> Tab,
+	new_tab: (self: Context) -> Tab,
 }
 
 --- A handle to a single page. Exposes methods for simulating user actions (clicking,
 --- typing), and also for getting information about the DOM and other parts of the page.
 --- @class Tab
 export type Tab = {
-	targetId: string,
+	target_id: string,
 	transport: Transport.Transport,
-	sessionId: string,
+	session_id: string,
 	navigating: boolean,
-	targetInfo: Target.TargetInfo,
-	requestInterceptor: RequestInterceptor?,
+	target_info: Target.TargetInfo,
+	request_interceptor: RequestInterceptor?,
 	-- TODO: response_handler
 	-- TODO: loading_failed_handler
-	authHandler: Fetch.AuthChallengeResponse?,
-	defaultTimeout: number,
+	auth_handler: Fetch.AuthChallengeResponse?,
+	default_timeout: number,
 	-- TODO: page_bindings
-	slowMotionMultiplier: number,
+	slow_motion_multiplier: number,
 
 	--- @within Tab
-	getTargetId: (self: Tab) -> string,
+	get_target_id: (self: Tab) -> string,
 
 	--- @within Tab
-	updateTargetInfo: (self: Tab, targetInfo: Target.TargetInfo) -> (),
+	update_target_info: (self: Tab, target_info: Target.TargetInfo) -> (),
 
 	--- @within Tab
-	getUrl: (self: Tab) -> string,
+	get_url: (self: Tab) -> string,
 
 	--- Set default timeout for the tab
-	--- This will be applied to all `waitForElement` and `waitForElements` calls without a timeout for this tab
+	--- This will be applied to all `wait_for_element` and `wait_for_elements` calls without a timeout for this tab
 	--- @within Tab
-	setDefaultTimeout: (self: Tab, timeout: number) -> Tab,
+	set_default_timeout: (self: Tab, timeout: number) -> Tab,
 
 	--[=[
 		Analogous to Puppeteer's ['slowMo' option](https://github.com/GoogleChrome/puppeteer/blob/v1.20.0/docs/api.md#puppeteerconnectoptions),
@@ -168,11 +168,11 @@ export type Tab = {
 
 		@within Tab
 	]=]
-	setSlowMotionMultiplier: (self: Tab, multiplier: number) -> Tab,
+	set_slow_motion_multiplier: (self: Tab, multiplier: number) -> Tab,
 
 	--- Call a target method.
 	--- @within Tab
-	callMethod: <Request, Response>(
+	call_method: <Request, Response>(
 		self: Tab,
 		method: string & { __Request: Request, __Response: Response },
 		params: Request
@@ -180,7 +180,7 @@ export type Tab = {
 
 	--- Adds event listener to `event`
 	--- @within Tab
-	addEventListener: <Parameters>(
+	add_event_listener: <Parameters>(
 		self: Tab,
 		event: string & { __Parameters: Parameters },
 		callback: (params: Parameters) -> ()
@@ -188,27 +188,27 @@ export type Tab = {
 
 	--- Fetches the most recent info about this target
 	--- @within Tab
-	getTargetInfo: (self: Tab) -> Target.TargetInfo,
+	get_target_info: (self: Tab) -> Target.TargetInfo,
 
 	--- @within Tab
-	getBrowserContextId: (self: Tab) -> string?,
+	get_browser_context_id: (self: Tab) -> string?,
 
 	--- Allows overriding user agent with the given string.
 	--- @within Tab
-	setUserAgent: (self: Tab, userAgent: string, acceptLanguage: string?, platform: string?) -> (),
+	set_user_agent: (self: Tab, userAgent: string, acceptLanguage: string?, platform: string?) -> (),
 
 	--- @within Tab
-	setExtraHttpHeaders: (self: Tab, headers: { [string]: string }) -> (),
+	set_extra_http_headers: (self: Tab, headers: { [string]: string }) -> (),
 
 	--- If enabled, instead of using the GUI to select files, the browser will
-	--- wait for the `handleFileChooser` method to be called.
+	--- wait for the `handle_file_chooser` method to be called.
 	--- \**WARNING**: Only works on Chromium / Chrome 77 and above.
 	--- @within Tab
-	setFileChooserDialogInterception: (self: Tab, enabled: boolean) -> (),
+	set_file_chooser_dialog_interception: (self: Tab, enabled: boolean) -> (),
 
 	--[=[
 		Will have the same effect as choosing these files from the file chooser dialog that would've
-		popped up had `setFileChooserDialogInterception` not been called. Calls to this method
+		popped up had `set_file_chooser_dialog_interception` not been called. Calls to this method
 		must be preceded by calls to that method.
 
 		Supports selecting files or closing the file chooser dialog.
@@ -217,34 +217,34 @@ export type Tab = {
 
 		@within Tab
 	]=]
-	handleFileChooser: (self: Tab, files: { string }, nodeId: DOM.NodeId) -> (),
+	handle_file_chooser: (self: Tab, files: { string }, nodeId: DOM.NodeId) -> (),
 
 	--- Pulls focus to this tab
 	--- @within Tab
-	bringToFront: (self: Tab) -> (),
+	bring_to_front: (self: Tab) -> (),
 
 	--[=[
 		Reloads given page optionally ignoring the cache
 
-		If `ignoreCache` is true, the browser cache is ignored (as if the user pressed Shift+F5).  
-		If `scriptToEvaluate` is given, the script will be injected into all frames of the
+		If `ignore_cache` is true, the browser cache is ignored (as if the user pressed Shift+F5).  
+		If `script_to_evaluate` is given, the script will be injected into all frames of the
 		inspected page after reload. Argument will be ignored if reloading dataURL origin.
 
 		@within Tab
 	]=]
-	reload: (self: Tab, ignoreCache: boolean?, scriptToEvaluateOnLoad: string?) -> Tab,
+	reload: (self: Tab, ignore_cache: boolean?, script_to_evaluate_on_load: string?) -> Tab,
 
 	--- @within Tab
-	stopLoading: (self: Tab) -> (),
+	stop_loading: (self: Tab) -> (),
 
 	--- @within Tab
-	navigateTo: (self: Tab, url: string) -> Tab,
+	navigate_to: (self: Tab, url: string) -> Tab,
 
 	--- @within Tab
-	waitUntilNavigated: (self: Tab) -> Tab,
+	wait_until_navigated: (self: Tab) -> Tab,
 
 	--- @within Tab
-	waitForRedirect: (self: Tab) -> Tab,
+	wait_for_redirect: (self: Tab) -> Tab,
 
 	--[=[
 		Get position and size of the browser window associated with this `Tab`.
@@ -255,7 +255,7 @@ export type Tab = {
 
 		@within Tab
 	]=]
-	getBounds: (self: Tab) -> Browser.Bounds,
+	get_bounds: (self: Tab) -> Browser.Bounds,
 
 	--[=[
 		Set position and/or size of the browser window associated with this `Tab`.
@@ -265,37 +265,37 @@ export type Tab = {
 
 		@within Tab
 	]=]
-	setBounds: (self: Tab, bounds: Browser.Bounds) -> Tab,
+	set_bounds: (self: Tab, bounds: Browser.Bounds) -> Tab,
 
 	--- Set the background color of the dom to transparent.
 	--- Useful when you want capture a .png
 	--- @within Tab
-	setTransparentBackgroundColor: (self: Tab) -> Tab,
+	set_transparent_background_color: (self: Tab) -> Tab,
 
 	--- Set the default background color of the dom.
 	--- Pass a RGBA to override the backrgound color of the dom.
 	--- @within Tab
-	setBackgroundColor: (self: Tab, color: DOM.RGBA) -> Tab,
+	set_background_color: (self: Tab, color: DOM.RGBA) -> Tab,
 
 	--- Evaluates expression on global object.
 	--- @within Tab
-	evaluate: (self: Tab, expression: string, awaitPromise: boolean?) -> Runtime.RemoteObject,
+	evaluate: (self: Tab, expression: string, await_promise: boolean?) -> Runtime.RemoteObject,
 
 	--- Returns the title of the document.
 	--- @within Tab
-	getTitle: (self: Tab) -> string,
+	get_title: (self: Tab) -> string,
 
 	--- Set cookies with tab's current URL
 	--- @within Tab
-	setCookies: (self: Tab, cookies: { Network.CookieParam }) -> (),
+	set_cookies: (self: Tab, cookies: { Network.CookieParam }) -> (),
 
 	--- Returns all cookies that match the tab's current URL.
 	--- @within Tab
-	getCookies: (self: Tab) -> { Network.Cookie },
+	get_cookies: (self: Tab) -> { Network.Cookie },
 
 	--- Delete cookies with tab's current URL
 	--- @within Tab
-	deleteCookies: (
+	delete_cookies: (
 		self: Tab,
 		cookies: {
 			{
@@ -303,103 +303,103 @@ export type Tab = {
 				url: string?,
 				domain: string?,
 				path: string?,
-				partitionKey: Network.CookiePartitionKey?,
+				partition_key: Network.CookiePartitionKey?,
 			}
 		}
 	) -> (),
 
 	--- @within Tab
-	setStorage: (self: Tab, name: string, item: any) -> (),
+	set_storage: (self: Tab, name: string, item: any) -> (),
 
 	--- @within Tab
-	getStorage: (self: Tab, name: string) -> any?,
+	get_storage: (self: Tab, name: string) -> any?,
 
 	--- @within Tab
-	removeStorage: (self: Tab, name: string) -> (),
+	remove_storage: (self: Tab, name: string) -> (),
 
 	--[=[
 		Capture a screenshot of the current page.
 
 		If `clip` is given, the screenshot is taken of the specified region only.
-		`Element.getBoxModel` can be used to get regions of certains elements on the page; there is
-		also `Element.captureScreenshot` as a shorthand.
+		`Element.get_box_model` can be used to get regions of certains elements on the page; there is
+		also `Element.capture_screenshot` as a shorthand.
 
-		If `fromSurface` is true, the screenshot is taken from the surface rather than the view.
+		If `from_surface` is true, the screenshot is taken from the surface rather than the view.
 
 		@within Tab
 	]=]
-	captureScreenshot: (
+	capture_screenshot: (
 		self: Tab,
 		options: {
 			format: "jpeg" | "png" | "webp"?,
 			quality: number?,
 			clip: Page.Viewport?,
-			fromSurface: boolean?,
-			captureBeyondViewport: boolean?,
-			optimizeForSpeed: boolean?,
+			from_surface: boolean?,
+			capture_beyond_viewport: boolean?,
+			optimize_for_speed: boolean?,
 		}
 	) -> buffer,
 
 	--- @within Tab
-	printToPdf: (
+	print_to_pdf: (
 		self: Tab,
 		options: {
 			landscape: boolean?,
-			displayHeaderFooter: boolean?,
-			printBackground: boolean?,
+			display_header_footer: boolean?,
+			print_background: boolean?,
 			scale: number?,
-			paperWidth: number?,
-			paperHeight: number?,
-			marginTop: number?,
-			marginBottom: number?,
-			marginLeft: number?,
-			marginRight: number?,
-			pageRanges: string?,
-			headerTemplate: string?,
-			footerTemplate: string?,
-			preferCSSPageSize: boolean?,
-			generateTaggedPDF: boolean?,
-			generateDocumentOutline: boolean?,
+			paper_width: number?,
+			paper_height: number?,
+			margin_top: number?,
+			margin_bottom: number?,
+			margin_left: number?,
+			margin_right: number?,
+			page_ranges: string?,
+			header_template: string?,
+			footer_template: string?,
+			prefer_csspage_size: boolean?,
+			generate_tagged_pdf: boolean?,
+			generate_document_outline: boolean?,
 		}?
 	) -> buffer,
 
 	--- @within Tab
-	startScreencast: (
+	start_screencast: (
 		self: Tab,
 		options: {
 			format: "jpeg" | "png"?,
 			quality: number?,
-			maxWidth: number?,
-			maxHeight: number?,
-			everyNthFrame: number?,
+			max_width: number?,
+			max_height: number?,
+			every_nth_frame: number?,
 		}
 	) -> (),
 
 	--- @within Tab
-	stopScreencast: (self: Tab) -> (),
+	stop_screencast: (self: Tab) -> (),
 
 	--- @within Tab
-	ackScreencast: (self: Tab, sessionId: number) -> (),
+	ack_screencast: (self: Tab, session_id: number) -> (),
 
 	--- Get the handle of the dialog opened in this tab.
 	--- @within Tab
-	getDialog: (self: Tab) -> Dialog.Dialog,
+	get_dialog: (self: Tab) -> Dialog.Dialog,
 
 	--- @within Tab
-	getDocument: (self: Tab) -> DOM.Node,
+	get_document: (self: Tab) -> DOM.Node,
 
 	--- Get the full HTML contents of the page.
 	--- @within Tab
-	getContent: (self: Tab) -> string,
+	get_content: (self: Tab) -> string,
 
 	--- @within Tab
-	describeNode: (self: Tab, nodeId: DOM.NodeId) -> DOM.Node,
+	describe_node: (self: Tab, node_id: DOM.NodeId) -> DOM.Node,
 
 	--- @within Tab
-	runQuerySelectorOnNode: (self: Tab, nodeId: DOM.NodeId, selector: string) -> Element?,
+	run_query_selector_on_node: (self: Tab, node_id: DOM.NodeId, selector: string) -> Element?,
 
 	--- @within Tab
-	runQuerySelectorAllOnNode: (self: Tab, nodeId: DOM.NodeId, selector: string) -> { Element },
+	run_query_selector_all_on_node: (self: Tab, node_id: DOM.NodeId, selector: string) -> { Element },
 
 	--- Returns the first element in the document which matches the given selector.
 	--- Equivalent to the following JS:
@@ -407,133 +407,133 @@ export type Tab = {
 	--- document.querySelector(selector)
 	--- ```
 	--- @within Tab
-	findElement: (self: Tab, selector: string) -> Element?,
+	find_element: (self: Tab, selector: string) -> Element?,
 
 	--- @within Tab
-	findElementByXPath: (self: Tab, selector: string) -> Element?,
+	find_element_by_xpath: (self: Tab, selector: string) -> Element?,
 
 	--- @within Tab
-	findElements: (self: Tab, selector: string) -> { Element },
+	find_elements: (self: Tab, selector: string) -> { Element },
 
 	--- @within Tab
-	findElementsByXPath: (self: Tab, selector: string) -> { Element },
+	find_elements_by_xpath: (self: Tab, selector: string) -> { Element },
 
 	--- @within Tab
-	waitForElement: (self: Tab, selector: string, timeout: number?) -> Element,
+	wait_for_element: (self: Tab, selector: string, timeout: number?) -> Element,
 
 	--- @within Tab
-	waitForXPath: (self: Tab, selector: string, timeout: number?) -> Element,
+	wait_for_xpath: (self: Tab, selector: string, timeout: number?) -> Element,
 
 	--- @within Tab
-	waitForElements: (self: Tab, selector: string, timeout: number?) -> { Element },
+	wait_for_elements: (self: Tab, selector: string, timeout: number?) -> { Element },
 
 	--- @within Tab
-	waitForElementsByXPath: (self: Tab, selector: string, timeout: number?) -> { Element },
+	wait_for_elements_by_xpath: (self: Tab, selector: string, timeout: number?) -> { Element },
 
 	--- Moves the mouse to this point (dispatches a mouseMoved event)
 	--- @within Tab
-	moveMouseToPoint: (self: Tab, point: Point) -> Tab,
+	move_mouse_to_point: (self: Tab, point: Point) -> Tab,
 
 	--- @within Tab
-	clickPoint: (self: Tab, point: Point) -> Tab,
+	click_point: (self: Tab, point: Point) -> Tab,
 
-	--- Does the same as `typeText` but it only dispatches a `keypress` and `input` event.
+	--- Does the same as `type_text` but it only dispatches a `keypress` and `input` event.
 	--- It does not send a `keydown` or `keyup` event. What this means is that it is much faster.
 	--- It is especially useful when you have a lot of text as input.
 	--- @within Tab
-	insertText: (self: Tab, text: string) -> Tab,
+	insert_text: (self: Tab, text: string) -> Tab,
 
 	--- @within Tab
-	typeText: (self: Tab, text: string) -> Tab,
+	type_text: (self: Tab, text: string) -> Tab,
 
 	--- Press a key on the keyboard, optionally with some modifier keys.
 	--- See [this file](https://github.com/puppeteer/puppeteer/blob/62da2366c65b335751896afbb0206f23c61436f1/lib/USKeyboardLayout.js)
 	--- for a full definition of which strings correspond with which keys.
 	--- @within Tab
-	pressKeyWithModifiers: (self: Tab, key: keys.Key, modifiers: { "Alt" | "Ctrl" | "Meta" | "Shift" }?) -> Tab,
+	press_key_with_modifiers: (self: Tab, key: keys.Key, modifiers: { "Alt" | "Ctrl" | "Meta" | "Shift" }?) -> Tab,
 
 	--- Press a key on the keyboard. See [this file](https://github.com/puppeteer/puppeteer/blob/62da2366c65b335751896afbb0206f23c61436f1/lib/USKeyboardLayout.js)
 	--- for a full definition of which strings correspond with which keys.
 	--- @within Tab
-	pressKey: (self: Tab, key: keys.Key) -> Tab,
+	press_key: (self: Tab, key: keys.Key) -> Tab,
 
 	--- Enables log domain.
 	--- Sends the entries collected so far to the client by means of the entryAdded notification.
 	--- See <https://chromedevtools.github.io/devtools-protocol/tot/Log#method-enable>.
 	--- @within Tab
-	enableLog: (self: Tab) -> Tab,
+	enable_log: (self: Tab) -> Tab,
 
 	--- Disables log domain.
 	--- Prevents further log entries from being reported to the client.
 	--- See <https://chromedevtools.github.io/devtools-protocol/tot/Log#method-disable>.
 	--- @within Tab
-	disableLog: (self: Tab) -> Tab,
+	disable_log: (self: Tab) -> Tab,
 
 	--- Starts violation reporting.
 	--- See <https://chromedevtools.github.io/devtools-protocol/tot/Log#method-startViolationsReport>.
 	--- @within Tab
-	startViolationsReport: (self: Tab, config: { Log.ViolationSetting }) -> Tab,
+	start_violations_report: (self: Tab, config: { Log.ViolationSetting }) -> Tab,
 
 	--- Stops violation reporting.
 	--- See <https://chromedevtools.github.io/devtools-protocol/tot/Log#method-stopViolationsReport>.
 	--- @within Tab
-	stopViolationsReport: (self: Tab) -> Tab,
+	stop_violations_report: (self: Tab) -> Tab,
 
 	--- Enables runtime domain.
 	--- @within Tab
-	enableRuntime: (self: Tab) -> Tab,
+	enable_runtime: (self: Tab) -> Tab,
 
 	--- Disables runtime domain.
 	--- @within Tab
-	disableRuntime: (self: Tab) -> Tab,
+	disable_runtime: (self: Tab) -> Tab,
 
 	--- Enables debugger domain.
 	--- @within Tab
-	enableDebugger: (self: Tab) -> Tab,
+	enable_debugger: (self: Tab) -> Tab,
 
 	--- Disables debugger domain.
 	--- @within Tab
-	disableDebugger: (self: Tab) -> Tab,
+	disable_debugger: (self: Tab) -> Tab,
 
 	--- Returns source for the script with given id.
 	--- Debugger domain must be enabled.
 	--- @within Tab
-	getScriptSource: (self: Tab, scriptId: string) -> string,
+	get_script_source: (self: Tab, script_id: string) -> string,
 
 	--- Enables the profiler domain.
 	--- @within Tab
-	enableProfiler: (self: Tab) -> Tab,
+	enable_profiler: (self: Tab) -> Tab,
 
 	--- Disables the profiler domain.
 	--- @within Tab
-	disableProfiler: (self: Tab) -> Tab,
+	disable_profiler: (self: Tab) -> Tab,
 
 	--[=[
 		Starts tracking which lines of JS have been executed
 
-		Will error unless `enableProfiler` has been called.
+		Will error unless `enable_profiler` has been called.
 
 		Equivalent to hitting the record button in the "coverage" tab in Chrome DevTools.
 
 		By default we enable the 'detailed' flag on StartPreciseCoverage, which enables block-level
-		granularity, and also enable 'callCount' (which when disabled always sets count to 1 or 0).
+		granularity, and also enable 'call_count' (which when disabled always sets count to 1 or 0).
 
 		@within Tab
 	]=]
-	startJsCoverage: (self: Tab) -> Tab,
+	start_js_coverage: (self: Tab) -> Tab,
 
 	--- Stops tracking which lines of JS have been executed.
-	--- If you're finished with the profiler, don't forget to call `disableProfiler`.
+	--- If you're finished with the profiler, don't forget to call `disable_profiler`.
 	--- @within Tab
-	stopJsCoverage: (self: Tab) -> Tab,
+	stop_js_coverage: (self: Tab) -> Tab,
 
 	--[=[
 		Collect coverage data for the current isolate, and resets execution counters.
 
-		Precise code coverage needs to have started (see `startJsCoverage`).
+		Precise code coverage needs to have started (see `start_js_coverage`).
 
 		Will only send information about code that's been executed since this method was last
-		called, or (if this is the first time) since calling `startJsCoverage`.
+		called, or (if this is the first time) since calling `start_js_coverage`.
 		Another way of thinking about it is: every time you call this, the call counts for
 		FunctionRanges are reset after returning.
 
@@ -542,34 +542,34 @@ export type Tab = {
 
 		@within Tab
 	]=]
-	takeJsCoverage: (self: Tab) -> { Profiler.ScriptCoverage },
+	take_js_coverage: (self: Tab) -> { Profiler.ScriptCoverage },
 
 	--- Enables fetch domain.
 	--- @within Tab
-	enableFetch: (self: Tab, patterns: { Fetch.RequestPattern }?, handleAuthRequests: boolean?) -> Tab,
+	enable_fetch: (self: Tab, patterns: { Fetch.RequestPattern }?, handle_auth_requests: boolean?) -> Tab,
 
 	--- Disables fetch domain.
 	--- @within Tab
-	disableFetch: (self: Tab) -> Tab,
+	disable_fetch: (self: Tab) -> Tab,
 
 	--[=[
 		Allows you to inspect outgoing network requests from the tab, and optionally return
 		your own responses to them
 
 		The `interceptor` argument is a closure which takes this tab's `Transport` and its SessionID
-		so that you can call methods from within the closure using `transport.callMethodOnTarget`.
+		so that you can call methods from within the closure using `transport.call_method_on_target`.
 
 		The closure needs to return { action: "Fulfill" | "Fail" | "Continue", ... }.
 
 		@within Tab
 	]=]
-	enableRequestInterception: (self: Tab, interceptor: RequestInterceptor) -> (),
+	enable_request_interception: (self: Tab, interceptor: RequestInterceptor) -> (),
 
 	--- @within Tab
 	authenticate: (self: Tab, username: string, password: string?) -> Tab,
 
 	--- @within Tab
-	enableStealthMode: (self: Tab) -> (),
+	enable_stealth_mode: (self: Tab) -> (),
 
 	--- Closes the target Page
 	--- @within Tab
@@ -578,47 +578,47 @@ export type Tab = {
 
 export type RequestInterceptor = (
 	transport: Transport.Transport,
-	sessionId: string,
+	session_id: string,
 	params: {
-		requestId: Fetch.RequestId,
+		request_id: Fetch.RequestId,
 		request: Network.Request,
-		frameId: Page.FrameId,
-		resourceType: Network.ResourceType,
-		responseErrorReason: Network.ErrorReason?,
-		responseStatusCode: number?,
-		responseStatusText: string?,
-		responseHeaders: { Fetch.HeaderEntry }?,
-		networkId: Network.RequestId?,
-		redirectedRequestId: Fetch.RequestId?,
+		frame_id: Page.FrameId,
+		resource_type: Network.ResourceType,
+		response_error_reason: Network.ErrorReason?,
+		response_status_code: number?,
+		response_status_text: string?,
+		response_headers: { Fetch.HeaderEntry }?,
+		network_id: Network.RequestId?,
+		redirected_request_id: Fetch.RequestId?,
 	}
 ) -> {
 	action: "Fulfill",
-	requestId: Fetch.RequestId,
-	responseCode: number,
-	responseHeaders: { Fetch.HeaderEntry }?,
-	binaryResponseHeaders: string?,
+	request_id: Fetch.RequestId,
+	response_code: number,
+	response_headers: { Fetch.HeaderEntry }?,
+	binary_response_headers: string?,
 	body: string?,
-	responsePhrase: string?,
+	response_phrase: string?,
 } | {
 	action: "Fail",
-	requestId: Fetch.RequestId,
-	errorReason: Network.ErrorReason,
+	request_id: Fetch.RequestId,
+	error_reason: Network.ErrorReason,
 } | {
 	action: "Continue",
 } | {
 	action: "Continue",
-	requestId: Fetch.RequestId,
+	request_id: Fetch.RequestId,
 	url: string?,
 	method: string?,
-	postData: string?,
+	post_data: string?,
 	headers: { Fetch.HeaderEntry }?,
-	interceptResponse: boolean?,
+	intercept_reason: boolean?,
 }
 
 --[=[
 	A handle to a [DOM Element](https://developer.mozilla.org/en-US/docs/Web/API/Element).
 
-	Typically you get access to these by passing `Tab.waitForElement` a CSS selector. Once
+	Typically you get access to these by passing `Tab.wait_for_element` a CSS selector. Once
 	you have a handle to an element, you can click it, type into it, inspect its
 	attributes, and more. You can even run a JavaScript function inside the tab which can reference
 	the element via `this`.
@@ -626,17 +626,17 @@ export type RequestInterceptor = (
 	@class Element
 ]=]
 export type Element = {
-	--- @prop remoteObjectId string
+	--- @prop remote_object_id string
 	--- @within Element
-	remoteObjectId: string,
+	remote_object_id: string,
 
-	--- @prop backendNodeId DOM.NodeId
+	--- @prop backend_node_id DOM.NodeId
 	--- @within Element
-	backendNodeId: DOM.BackendNodeId,
+	backend_node_id: DOM.BackendNodeId,
 
-	--- @prop nodeId DOM.NodeId
+	--- @prop node_id DOM.NodeId
 	--- @within Element
-	nodeId: DOM.NodeId,
+	node_id: DOM.NodeId,
 
 	--- @prop parent Tab
 	--- @within Element
@@ -655,13 +655,13 @@ export type Element = {
 	value: string,
 
 	--- @within Element
-	getDescription: (self: Element) -> DOM.Node,
+	get_description: (self: Element) -> DOM.Node,
 
 	--- @within Element
-	getAttributes: (self: Element) -> { string }?,
+	get_attributes: (self: Element) -> { string }?,
 
 	--- @within Element
-	getAttributeValue: (self: Element, name: string) -> string?,
+	get_attribute_value: (self: Element, name: string) -> string?,
 
 	--[=[
 		Returns the inner text of an HTML Element. Returns an empty string on elements with no text.
@@ -674,54 +674,54 @@ export type Element = {
 
 		@within Element
 	]=]
-	getInnerText: (self: Element) -> string,
+	get_inner_text: (self: Element) -> string,
 
 	--- Get the full HTML contents of the element.
 	--- Equivalent to the following JS: ```element.outerHTML```.
 	--- @within Element
-	getContent: (self: Element) -> string,
+	get_content: (self: Element) -> string,
 
 	--- @within Element
-	findElement: (self: Element, selector: string) -> Element?,
+	find_element: (self: Element, selector: string) -> Element?,
 
 	--- @within Element
-	findElements: (self: Element, selector: string) -> { Element },
+	find_elements: (self: Element, selector: string) -> { Element },
 
 	--- @within Element
-	waitForElement: (self: Element, selector: string, timeout: number?) -> Element,
+	wait_for_element: (self: Element, selector: string, timeout: number?) -> Element,
 
 	--- @within Element
-	waitForElements: (self: Element, selector: string, timeout: number?) -> { Element },
+	wait_for_elements: (self: Element, selector: string, timeout: number?) -> { Element },
 
 	--- @within Element
-	callJsFunction: (
+	call_js_function: (
 		self: Element,
-		functionDeclaration: string,
+		function_declaration: string,
 		args: { string }?,
-		awaitPromise: boolean?
+		await_promise: boolean?
 	) -> Runtime.RemoteObject,
 
 	--- @within Element
-	getMidpoint: (self: Element) -> Point,
+	get_midpoint: (self: Element) -> Point,
 
 	--- Get boxes for this element
 	--- @within Element
-	getBoxModel: (self: Element) -> BoxModel,
+	get_box_model: (self: Element) -> BoxModel,
 
 	--- Scrolls the current element into view
 	--- Used prior to any action applied to the current element to ensure action is duable.
 	--- @within Element
-	scrollIntoView: (self: Element) -> Element,
+	scroll_into_view: (self: Element) -> Element,
 
 	--- Moves the mouse to the middle of this element
 	--- @within Element
-	moveMouseOver: (self: Element) -> Element,
+	move_mouse_over: (self: Element) -> Element,
 
 	--- @within Element
 	click: (self: Element) -> Element,
 
 	--- @within Element
-	typeInto: (self: Element, text: string) -> Element,
+	type_into: (self: Element, text: string) -> Element,
 
 	--- @within Element
 	focus: (self: Element) -> Element,
@@ -729,13 +729,13 @@ export type Element = {
 	--- Capture a screenshot of this element.
 	--- The screenshot is taken from the surface using this element's content-box.
 	--- @within Element
-	captureScreenshot: (
+	capture_screenshot: (
 		self: Element,
 		options: {
 			format: "jpeg" | "png" | "webp"?,
 			quality: number?,
-			fromSurface: boolean?,
-			optimizeForSpeed: boolean?,
+			from_surface: boolean?,
+			optimize_for_speed: boolean?,
 		}
 	) -> buffer,
 }
@@ -744,10 +744,10 @@ export type Point = { x: number, y: number }
 
 --- @class ElementQuad
 export type ElementQuad = {
-	topLeft: Point,
-	topRight: Point,
-	bottomRight: Point,
-	bottomLeft: Point,
+	top_left: Point,
+	top_right: Point,
+	bottom_right: Point,
+	bottom_left: Point,
 
 	--- @within ElementQuad
 	height: (self: ElementQuad) -> number,
@@ -757,27 +757,27 @@ export type ElementQuad = {
 
 	--- The width divided by the height
 	--- @within ElementQuad
-	aspectRatio: (self: ElementQuad) -> number,
+	aspect_ratio: (self: ElementQuad) -> number,
 
 	--- The most left (smallest) x-coordinate
 	--- @within ElementQuad
-	mostLeft: (self: ElementQuad) -> number,
+	most_left: (self: ElementQuad) -> number,
 
 	--- The most right (largest) x-coordinate
 	--- @within ElementQuad
-	mostRight: (self: ElementQuad) -> number,
+	most_right: (self: ElementQuad) -> number,
 
 	--- The most top (smallest) y-coordinate
 	--- @within ElementQuad
-	mostTop: (self: ElementQuad) -> number,
+	most_top: (self: ElementQuad) -> number,
 
 	--- The most bottom (largest) y-coordinate
 	--- @within ElementQuad
-	mostBottom: (self: ElementQuad) -> number,
+	most_bottom: (self: ElementQuad) -> number,
 
 	--- If the most bottom point of `self` is above the most top point of `other`
 	--- @within ElementQuad
-	strictlyAbove: (self: ElementQuad, other: ElementQuad) -> boolean,
+	strictly_above: (self: ElementQuad, other: ElementQuad) -> boolean,
 
 	--- If the most bottom point of `self` is above or on the same line as the
 	--- most top point of `other`
@@ -786,7 +786,7 @@ export type ElementQuad = {
 
 	--- If the most top point of `self` is below the most bottom point of `other`
 	--- @within ElementQuad
-	strictlyBelow: (self: ElementQuad, other: ElementQuad) -> boolean,
+	strictly_below: (self: ElementQuad, other: ElementQuad) -> boolean,
 
 	--- If the most top point of `self` is below or on the same line as the
 	--- most bottom point of `other`
@@ -795,33 +795,33 @@ export type ElementQuad = {
 
 	--- If the most right point of `self` is left of the most left point of `other`
 	--- @within ElementQuad
-	strictlyLeftOf: (self: ElementQuad, other: ElementQuad) -> boolean,
+	strictly_left_of: (self: ElementQuad, other: ElementQuad) -> boolean,
 
 	--- If the most right point of `self` is left or on the same line as the
 	--- most left point of `other`
 	--- @within ElementQuad
-	leftOf: (self: ElementQuad, other: ElementQuad) -> boolean,
+	left_of: (self: ElementQuad, other: ElementQuad) -> boolean,
 
 	--- If the most left point of `self` is right of the most right point of `other`
 	--- @within ElementQuad
-	strictlyRightOf: (self: ElementQuad, other: ElementQuad) -> boolean,
+	strictly_right_of: (self: ElementQuad, other: ElementQuad) -> boolean,
 
 	--- If the most left point of `self` is right or on the same line as the
 	--- most right point of `other`
 	--- @within ElementQuad
-	rightOf: (self: ElementQuad, other: ElementQuad) -> boolean,
+	right_of: (self: ElementQuad, other: ElementQuad) -> boolean,
 
 	--- If `self` is within the left/right boundaries defined by `other`.
 	--- @within ElementQuad
-	withinHorizontalBoundsOf: (self: ElementQuad, other: ElementQuad) -> boolean,
+	within_horizontal_bounds_of: (self: ElementQuad, other: ElementQuad) -> boolean,
 
 	--- If `self` is within the top/bottom boundaries defined by `other`.
 	--- @within ElementQuad
-	withinVerticalBoundsOf: (self: ElementQuad, other: ElementQuad) -> boolean,
+	within_vertical_bounds_of: (self: ElementQuad, other: ElementQuad) -> boolean,
 
 	--- If `self` is within the boundaries defined by `other`.
 	--- @within ElementQuad
-	withinBoundsOf: (self: ElementQuad, other: ElementQuad) -> boolean,
+	within_bounds_of: (self: ElementQuad, other: ElementQuad) -> boolean,
 }
 
 --- @class BoxModel
@@ -835,19 +835,19 @@ export type BoxModel = {
 
 	--- Create a `Page.Viewport` equal to the content-box, using a scale of 1.0
 	--- @within BoxModel
-	contentViewport: (self: BoxModel) -> Page.Viewport,
+	content_viewport: (self: BoxModel) -> Page.Viewport,
 
 	--- Create a `Page.Viewport` equal to the padding-box, using a scale of 1.0
 	--- @within BoxModel
-	paddingViewport: (self: BoxModel) -> Page.Viewport,
+	padding_viewport: (self: BoxModel) -> Page.Viewport,
 
 	--- Create a `Page.Viewport` equal to the border-box, using a scale of 1.0
 	--- @within BoxModel
-	borderViewport: (self: BoxModel) -> Page.Viewport,
+	border_viewport: (self: BoxModel) -> Page.Viewport,
 
 	--- Create a `Page.Viewport` equal to the margin-box, using a scale of 1.0
 	--- @within BoxModel
-	marginViewport: (self: BoxModel) -> Page.Viewport,
+	margin_viewport: (self: BoxModel) -> Page.Viewport,
 }
 
 return nil

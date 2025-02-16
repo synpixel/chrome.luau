@@ -1,65 +1,66 @@
 local task = require("@lune/task")
 local net = require("@lune/net")
 local serde = require("@lune/serde")
+local casing = require("./utils/casing")
 local Target = require("./protocol/Target")
 
 export type Transport = {
 	connection: net.WebSocket,
-	waitingCalls: { [number]: thread },
-	listeners: { { event: string, sessionId: string?, callback: (params: any) -> () } },
+	waiting_calls: { [number]: thread },
+	listeners: { { event: string, session_id: string?, callback: (params: any) -> () } },
 	open: boolean,
-	callIdCounter: number,
+	call_id_counter: number,
 	-- loop_shutdown_tx
-	idleBrowserTimeout: number,
-	uniqueCallId: (self: Transport) -> number,
-	callMethodOnBrowser: <Request, Response>(
+	idle_browser_timeout: number,
+	unique_call_id: (self: Transport) -> number,
+	call_method_on_browser: <Request, Response>(
 		self: Transport,
 		method: string & { __Request: Request, __Response: Response },
 		parameters: Request
 	) -> Response,
-	callMethodOnTarget: <Request, Response>(
+	call_method_on_target: <Request, Response>(
 		self: Transport,
 		method: string & { __Request: Request, __Response: Response },
 		parameters: Request,
-		sessionId: string
+		session_id: string
 	) -> Response,
-	listenToBrowserEvent: <Parameters>(
+	listen_to_browser_event: <Parameters>(
 		self: Transport,
 		event: string & { __Parameters: Parameters },
 		callback: (params: Parameters) -> ()
 	) -> () -> (),
-	listenToTargetEvent: <Parameters>(
+	listen_to_target_event: <Parameters>(
 		self: Transport,
 		event: string & { __Parameters: Parameters },
-		sessionId: string,
+		session_id: string,
 		callback: (params: Parameters) -> ()
 	) -> () -> (),
 	shutdown: (self: Transport) -> (),
 }
 
-local function uniqueCallId(self: Transport): number
-	self.callIdCounter += 1
-	return self.callIdCounter
+local function unique_call_id(self: Transport): number
+	self.call_id_counter += 1
+	return self.call_id_counter
 end
 
-local function callMethodOnBrowser<Request, Response>(
+local function call_method_on_browser<Request, Response>(
 	self: Transport,
 	method: string & { __Request: Request, __Response: Response },
 	params: Request
 ): Response
 	assert(self.open, "Connection was closed")
 
-	local id = self:uniqueCallId()
+	local id = self:unique_call_id()
 	local call = {
 		id = id,
 		method = method,
-		params = params,
+		params = casing.snake_to_camel(params),
 	}
 
 	local message = serde.encode("json", call)
 
 	local thread = coroutine.running()
-	self.waitingCalls[id] = thread
+	self.waiting_calls[id] = thread
 
 	self.connection.send(message)
 
@@ -71,28 +72,28 @@ local function callMethodOnBrowser<Request, Response>(
 	return response.result
 end
 
-local function callMethodOnTarget<Request, Response>(
+local function call_method_on_target<Request, Response>(
 	self: Transport,
 	method: string & { __Request: Request, __Response: Response },
 	params: Request,
-	sessionId: string
+	session_id: string
 ): Response
 	assert(self.open, "Connection was closed")
 
-	local id = self:uniqueCallId()
+	local id = self:unique_call_id()
 	local call = {
 		id = id,
 		method = method,
-		params = params,
+		params = casing.snake_to_camel(params),
 	}
 
 	local message = serde.encode("json", call)
 
 	local thread = coroutine.running()
-	self.waitingCalls[id] = thread
+	self.waiting_calls[id] = thread
 
-	self:callMethodOnBrowser(Target.SendMessageToTarget, {
-		sessionId = sessionId,
+	self:call_method_on_browser(Target.SendMessageToTarget, {
+		session_id = session_id,
 		message = message,
 	})
 
@@ -104,7 +105,7 @@ local function callMethodOnTarget<Request, Response>(
 	return response.result
 end
 
-local function listenToBrowserEvent<Parameters>(
+local function listen_to_browser_event<Parameters>(
 	self: Transport,
 	event: string & { __Parameters: Parameters },
 	callback: (params: Parameters) -> ()
@@ -118,13 +119,13 @@ local function listenToBrowserEvent<Parameters>(
 	end
 end
 
-local function listenToTargetEvent<Parameters>(
+local function listen_to_target_event<Parameters>(
 	self: Transport,
 	event: string & { __Parameters: Parameters },
-	sessionId: string,
+	session_id: string,
 	callback: (params: Parameters) -> ()
 ): () -> ()
-	local listener = { event = event, sessionId = sessionId, callback = callback }
+	local listener = { event = event, session_id = session_id, callback = callback }
 	table.insert(self.listeners, listener)
 
 	return function()
@@ -133,7 +134,7 @@ local function listenToTargetEvent<Parameters>(
 	end
 end
 
-local function handleIncomingMessages(self: Transport)
+local function handle_incoming_messages(self: Transport)
 	task.spawn(function()
 		while true do
 			if self.open == false then
@@ -146,22 +147,24 @@ local function handleIncomingMessages(self: Transport)
 			end
 
 			local response = serde.decode("json", message)
-			local sessionId = if response.params ~= nil then response.params.sessionId else nil
+			local session_id = if response.params ~= nil then response.params.sessionId else nil
 
 			if response.method == Target.ReceivedMessageFromTarget then
 				response = serde.decode("json", response.params.message)
 			end
 
-			for id, call in self.waitingCalls do
+			response = casing.camel_to_snake(response)
+
+			for id, call in self.waiting_calls do
 				if response.id == id then
-					self.waitingCalls[id] = nil
+					self.waiting_calls[id] = nil
 					task.spawn(call, response)
 					break
 				end
 			end
 
 			for index, listener in self.listeners do
-				if sessionId ~= listener.sessionId then
+				if session_id ~= listener.session_id then
 					continue
 				end
 
@@ -178,25 +181,25 @@ local function shutdown(self: Transport)
 	self.connection.close(1000)
 end
 
-local function new(websocketUrl: string, idleBrowserTimeout: number): Transport
-	local connection = net.socket(websocketUrl)
+local function new(websocket_url: string, idle_browser_timeout: number): Transport
+	local connection = net.socket(websocket_url)
 
 	local transport = {
 		connection = connection,
-		waitingCalls = {},
+		waiting_calls = {},
 		listeners = {},
 		open = true,
-		callIdCounter = 0,
-		idleBrowserTimeout = idleBrowserTimeout,
-		uniqueCallId = uniqueCallId,
-		callMethodOnBrowser = callMethodOnBrowser,
-		callMethodOnTarget = callMethodOnTarget,
-		listenToBrowserEvent = listenToBrowserEvent,
-		listenToTargetEvent = listenToTargetEvent,
+		call_id_counter = 0,
+		idle_browser_timeout = idle_browser_timeout,
+		unique_call_id = unique_call_id,
+		call_method_on_browser = call_method_on_browser,
+		call_method_on_target = call_method_on_target,
+		listen_to_browser_event = listen_to_browser_event,
+		listen_to_target_event = listen_to_target_event,
 		shutdown = shutdown,
 	}
 
-	handleIncomingMessages(transport)
+	handle_incoming_messages(transport)
 
 	return transport
 end

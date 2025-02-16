@@ -9,14 +9,14 @@ export type Element = types.Element
 
 local DEFAULT_TIMEOUT = 3
 
-local function extractMidpoint(remoteObject: Runtime.RemoteObject): { x: number, y: number }
-	if remoteObject.preview == nil then
+local function extract_midpoint(remote_object: Runtime.RemoteObject): { x: number, y: number }
+	if remote_object.preview == nil then
 		return { x = 0, y = 0 }
 	end
 
 	local props = {}
 
-	for _, property in remoteObject.preview.properties do
+	for _, property in remote_object.preview.properties do
 		props[property.name] = tonumber(property.value) :: number
 	end
 
@@ -26,19 +26,19 @@ local function extractMidpoint(remoteObject: Runtime.RemoteObject): { x: number,
 	}
 end
 
-local function getDescription(self: Element): DOM.Node
-	return self.parent:callMethod(DOM.DescribeNode, { nodeId = self.nodeId, depth = 100 }).node
+local function get_description(self: Element): DOM.Node
+	return self.parent:call_method(DOM.DescribeNode, { node_id = self.node_id, depth = 100 }).node
 end
 
-local function getAttributes(self: Element): { string }?
-	local description = self:getDescription()
+local function get_attributes(self: Element): { string }?
+	local description = self:get_description()
 	return description.attributes
 end
 
-local function getAttributeValue(self: Element, name: string): string?
-	local jsFunction = `function() \{ return this.getAttribute("{name}"); \}`
+local function get_attribute_value(self: Element, name: string): string?
+	local js_function = `function() \{ return this.getAttribute("{name}"); \}`
 
-	local value = self:callJsFunction(jsFunction, nil, true).value
+	local value = self:call_js_function(js_function, nil, true).value
 	if value == nil then
 		return nil
 	end
@@ -46,29 +46,29 @@ local function getAttributeValue(self: Element, name: string): string?
 	return value :: string
 end
 
-local function getInnerText(self: Element): string
-	local text = self:callJsFunction("function() { return this.innerText }").value
+local function get_inner_text(self: Element): string
+	local text = self:call_js_function("function() { return this.innerText }").value
 	return text :: string
 end
 
-local function getContent(self: Element): string
-	local html = self:callJsFunction("function() { return this.outerHTML }").value
+local function get_content(self: Element): string
+	local html = self:call_js_function("function() { return this.outerHTML }").value
 	return html :: string
 end
 
-local function findElement(self: Element, selector: string): Element?
-	return self.parent:runQuerySelectorOnNode(self.nodeId, selector)
+local function find_element(self: Element, selector: string): Element?
+	return self.parent:run_query_selector_on_node(self.node_id, selector)
 end
 
-local function findElements(self: Element, selector: string): { Element }
-	return self.parent:runQuerySelectorAllOnNode(self.nodeId, selector)
+local function find_elements(self: Element, selector: string): { Element }
+	return self.parent:run_query_selector_all_on_node(self.node_id, selector)
 end
 
-local function waitForElement(self: Element, selector: string, timeout: number?): Element
+local function wait_for_element(self: Element, selector: string, timeout: number?): Element
 	local timeout = timeout or DEFAULT_TIMEOUT
 
-	return Wait.withTimeout(timeout):pauseUntil(function()
-		local element = self:findElement(selector)
+	return Wait.with_timeout(timeout):pause_until(function()
+		local element = self:find_element(selector)
 		if element == nil then
 			return Wait.None
 		end
@@ -77,11 +77,11 @@ local function waitForElement(self: Element, selector: string, timeout: number?)
 	end)
 end
 
-local function waitForElements(self: Element, selector: string, timeout: number?): { Element }
+local function wait_for_elements(self: Element, selector: string, timeout: number?): { Element }
 	local timeout = timeout or DEFAULT_TIMEOUT
 
-	return Wait.withTimeout(timeout):pauseUntil(function()
-		local elements = self:findElements(selector)
+	return Wait.with_timeout(timeout):pause_until(function()
+		local elements = self:find_elements(selector)
 		if #elements <= 0 then
 			return Wait.None
 		end
@@ -90,46 +90,46 @@ local function waitForElements(self: Element, selector: string, timeout: number?
 	end)
 end
 
-local function callJsFunction(
+local function call_js_function(
 	self: Element,
-	functionDeclaration: string,
+	function_declaration: string,
 	args: { string }?,
-	awaitPromise: boolean?
+	await_promise: boolean?
 ): Runtime.RemoteObject
-	local callArgs: { Runtime.CallArgument }
+	local call_args: { Runtime.CallArgument }
 
 	if args ~= nil then
-		callArgs = {}
+		call_args = {}
 		for index, arg in args do
-			callArgs[index] = { value = arg }
+			call_args[index] = { value = arg }
 		end
 	end
 
-	return self.parent:callMethod(Runtime.CallFunctionOn, {
-		objectId = self.remoteObjectId,
-		functionDeclaration = functionDeclaration,
-		arguments = callArgs,
-		returnByValue = false,
-		generatePreview = true,
+	return self.parent:call_method(Runtime.CallFunctionOn, {
+		object_id = self.remote_object_id,
+		function_declaration = function_declaration,
+		arguments = call_args,
+		return_by_value = false,
+		generate_preview = true,
 		silent = false,
-		awaitPromise = awaitPromise,
+		await_promise = await_promise,
 	}).result
 end
 
-local function getMidpoint(self: Element): types.Point
-	local quads = self.parent:callMethod(DOM.GetContentQuads, { backendNodeId = self.backendNodeId }).quads
+local function get_midpoint(self: Element): types.Point
+	local quads = self.parent:call_method(DOM.GetContentQuads, { backend_node_id = self.backend_node_id }).quads
 
-	local rawQuad = quads[1]
-	if rawQuad ~= nil then
-		local inputQuad = ElementQuad.fromRawPoints(rawQuad)
+	local raw_quad = quads[1]
+	if raw_quad ~= nil then
+		local input_quad = ElementQuad.from_raw_points(raw_quad)
 		return {
-			x = (inputQuad.bottomRight.x + inputQuad.topLeft.x) / 2,
-			y = (inputQuad.bottomRight.y + inputQuad.topLeft.y) / 2,
+			x = (input_quad.bottom_right.x + input_quad.top_left.x) / 2,
+			y = (input_quad.bottom_right.y + input_quad.top_left.y) / 2,
 		}
 	end
 
-	return Wait.withTimeout(20):pauseUntil(function()
-		local result = self:callJsFunction([[
+	return Wait.with_timeout(20):pause_until(function()
+		local result = self:call_js_function([[
 			function() {
                 let rect = this.getBoundingClientRect();
 
@@ -141,7 +141,7 @@ local function getMidpoint(self: Element): types.Point
             }
 		]])
 
-		local midpoint = extractMidpoint(result)
+		local midpoint = extract_midpoint(result)
 		if midpoint.x == 0 then
 			return Wait.None
 		end
@@ -150,20 +150,20 @@ local function getMidpoint(self: Element): types.Point
 	end)
 end
 
-local function getBoxModel(self: Element): BoxModel.BoxModel
-	local model = self.parent:callMethod(DOM.GetBoxModel, { backendNodeId = self.backendNodeId }).model
+local function get_box_model(self: Element): BoxModel.BoxModel
+	local model = self.parent:call_method(DOM.GetBoxModel, { backend_node_id = self.backend_node_id }).model
 	return BoxModel.new({
-		content = ElementQuad.fromRawPoints(model.content),
-		padding = ElementQuad.fromRawPoints(model.padding),
-		border = ElementQuad.fromRawPoints(model.border),
-		margin = ElementQuad.fromRawPoints(model.margin),
+		content = ElementQuad.from_raw_points(model.content),
+		padding = ElementQuad.from_raw_points(model.padding),
+		border = ElementQuad.from_raw_points(model.border),
+		margin = ElementQuad.from_raw_points(model.margin),
 		width = model.width,
 		height = model.height,
 	})
 end
 
-local function scrollIntoView(self: Element): Element
-	local result = self:callJsFunction(
+local function scroll_into_view(self: Element): Element
+	local result = self:call_js_function(
 		[[
 			async function() {
             	if (!this.isConnected) return "Node is detached from document";
@@ -198,98 +198,98 @@ local function scrollIntoView(self: Element): Element
 	return self
 end
 
-local function moveMouseOver(self: Element): Element
-	self:scrollIntoView()
-	local midpoint = self:getMidpoint()
-	self.parent:moveMouseToPoint(midpoint)
+local function move_mouse_over(self: Element): Element
+	self:scroll_into_view()
+	local midpoint = self:get_midpoint()
+	self.parent:move_mouse_to_point(midpoint)
 	return self
 end
 
 local function click(self: Element): Element
-	self:scrollIntoView()
-	local midpoint = self:getMidpoint()
-	self.parent:clickPoint(midpoint)
+	self:scroll_into_view()
+	local midpoint = self:get_midpoint()
+	self.parent:click_point(midpoint)
 	return self
 end
 
-local function typeInto(self: Element, text: string): Element
+local function type_into(self: Element, text: string): Element
 	self:click()
-	self.parent:typeText(text)
+	self.parent:type_text(text)
 	return self
 end
 
 local function focus(self: Element): Element
-	self:scrollIntoView()
-	self.parent:callMethod(DOM.Focus, { backendNodeId = self.backendNodeId })
+	self:scroll_into_view()
+	self.parent:call_method(DOM.Focus, { backend_node_id = self.backend_node_id })
 	return self
 end
 
-local function captureScreenshot(
+local function capture_screenshot(
 	self: Element,
 	options: {
 		format: "jpeg" | "png" | "webp"?,
 		quality: number?,
-		fromSurface: boolean?,
-		optimizeForSpeed: boolean?,
+		from_surface: boolean?,
+		optimize_for_speed: boolean?,
 	}
 ): buffer
-	self:scrollIntoView()
-	return self.parent:captureScreenshot({
+	self:scroll_into_view()
+	return self.parent:capture_screenshot({
 		format = options.format,
 		quality = options.quality,
-		clip = self:getBoxModel():contentViewport(),
-		fromSurface = options.fromSurface,
-		optimizeForSpeed = options.optimizeForSpeed,
+		clip = self:get_box_model():content_viewport(),
+		from_surface = options.from_surface,
+		optimize_for_speed = options.optimize_for_speed,
 	})
 end
 
---- Using a "nodeId", of the type returned by QuerySelector and QuerySelectorAll, this finds
---- the "backendNodeId" and "remoteObjectId" which are stable identifiers, unlike nodeId.
+--- Using a "node_id", of the type returned by QuerySelector and QuerySelectorAll, this finds
+--- the "backend_node_id" and "remote_object_id" which are stable identifiers, unlike node_id.
 --- We use these two when making various calls to the API because of that.
 --- @within Element
-local function new(parent: types.Tab, nodeId: DOM.NodeId): Element?
-	if nodeId == 0 then
+local function new(parent: types.Tab, node_id: DOM.NodeId): Element?
+	if node_id == 0 then
 		return nil
 	end
 
-	local node = parent:callMethod(DOM.DescribeNode, { nodeId = nodeId, depth = 100 }).node
+	local node = parent:call_method(DOM.DescribeNode, { node_id = node_id, depth = 100 }).node
 
 	local attributes = node.attributes
-	local tag = node.nodeName
+	local tag = node.node_name
 
-	local backendNodeId = node.backendNodeId
+	local backend_node_id = node.backend_node_id
 
-	local object = parent:callMethod(DOM.ResolveNode, { backendNodeId = backendNodeId }).object
+	local object = parent:call_method(DOM.ResolveNode, { backend_node_id = backend_node_id }).object
 
 	local value = tostring(object.value)
-	local remoteObjectId = assert(object.objectId, "Couldn't find object ID")
+	local remote_object_id = assert(object.object_id, "Couldn't find object ID")
 
 	return {
-		remoteObjectId = remoteObjectId,
-		backendNodeId = backendNodeId,
-		nodeId = nodeId,
+		remote_object_id = remote_object_id,
+		backend_node_id = backend_node_id,
+		node_id = node_id,
 		parent = parent,
 		attributes = attributes,
 		tag = tag,
 		value = value,
-		getDescription = getDescription,
-		getAttributes = getAttributes,
-		getAttributeValue = getAttributeValue,
-		getInnerText = getInnerText,
-		getContent = getContent,
-		findElement = findElement,
-		findElements = findElements,
-		waitForElement = waitForElement,
-		waitForElements = waitForElements,
-		callJsFunction = callJsFunction,
-		getMidpoint = getMidpoint,
-		getBoxModel = getBoxModel,
-		scrollIntoView = scrollIntoView,
-		moveMouseOver = moveMouseOver,
+		get_description = get_description,
+		get_attributes = get_attributes,
+		get_attribute_value = get_attribute_value,
+		get_inner_text = get_inner_text,
+		get_content = get_content,
+		find_element = find_element,
+		find_elements = find_elements,
+		wait_for_element = wait_for_element,
+		wait_for_elements = wait_for_elements,
+		call_js_function = call_js_function,
+		get_midpoint = get_midpoint,
+		get_box_model = get_box_model,
+		scroll_into_view = scroll_into_view,
+		move_mouse_over = move_mouse_over,
 		click = click,
-		typeInto = typeInto,
+		type_into = type_into,
 		focus = focus,
-		captureScreenshot = captureScreenshot,
+		capture_screenshot = capture_screenshot,
 	}
 end
 

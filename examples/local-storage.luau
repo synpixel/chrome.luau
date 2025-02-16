@@ -1,9 +1,9 @@
 local chrome = require("../src")
 
 local browser = chrome.Browser.new()
-local tab = browser:newTab()
+local tab = browser:new_tab()
 
-tab:navigateTo("https://www.wikipedia.org"):waitUntilNavigated()
+tab:navigate_to("https://www.wikipedia.org"):wait_until_navigated()
 
-local item = tab:getStorage("translationHash") :: string
+local item = tab:get_storage("translationHash") :: string
 print(item)

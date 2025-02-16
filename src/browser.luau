@@ -11,54 +11,54 @@ export type Browser = types.Browser
 
 local DEFAULT_IDLE_TIMEOUT = 30
 
-local function getTabs(self: Browser): { Tab.Tab }
+local function get_tabs(self: Browser): { Tab.Tab }
 	return self.tabs
 end
 
-local function callMethod<Request, Response>(
+local function call_method<Request, Response>(
 	self: Browser,
 	method: string & { __Request: Request, __Response: Response },
 	params: Request
 ): Response
-	return self.transport:callMethodOnBrowser(method, params)
+	return self.transport:call_method_on_browser(method, params)
 end
 
-local function addEventListener<Parameters>(
+local function add_event_listener<Parameters>(
 	self: Browser,
 	event: string & { __Parameters: Parameters },
 	callback: (params: Parameters) -> ()
 ): () -> ()
-	return self.transport:listenToBrowserEvent(event, callback)
+	return self.transport:listen_to_browser_event(event, callback)
 end
 
-local function getVersion(self: Browser): {
-	protocolVersion: string,
+local function get_version(self: Browser): {
+	protocol_version: string,
 	product: string,
 	revision: string,
-	userAgent: string,
-	jsVersion: string,
+	user_agent: string,
+	js_version: string,
 }
-	return self:callMethod(Browser.GetVersion)
+	return self:call_method(Browser.GetVersion)
 end
 
-local function newTabWithOptions(
+local function new_tab_with_options(
 	self: Browser,
 	options: {
 		url: string,
 		width: number?,
 		height: number?,
-		browserContextId: Browser.BrowserContextID?,
-		enableBeginFrameControl: boolean?,
-		newWindow: boolean?,
+		browser_context_id: Browser.BrowserContextID?,
+		enable_begin_frame_control: boolean?,
+		new_window: boolean?,
 		background: boolean?,
-		forTab: boolean?,
+		for_tab: boolean?,
 	}
 ): Tab.Tab
-	local targetId = self:callMethod(Target.CreateTarget, options).targetId
+	local target_id = self:call_method(Target.CreateTarget, options).target_id
 
-	return Wait.withTimeout(20):pauseUntil(function()
+	return Wait.with_timeout(20):pause_until(function()
 		for index, tab in self.tabs do
-			if tab:getTargetId() == targetId then
+			if tab:get_target_id() == target_id then
 				return tab :: any
 			end
 		end
@@ -67,82 +67,82 @@ local function newTabWithOptions(
 	end)
 end
 
-local function newTab(self: Browser): Tab.Tab
-	return self:newTabWithOptions({ url = "about:blank" })
+local function new_tab(self: Browser): Tab.Tab
+	return self:new_tab_with_options({ url = "about:blank" })
 end
 
-local function newContext(self: Browser): Context.Context
-	local contextId = self:callMethod(Target.CreateBrowserContext, {}).browserContextId
-	return Context.new(self, contextId)
+local function new_context(self: Browser): Context.Context
+	local context_id = self:call_method(Target.CreateBrowserContext, {}).browser_context_id
+	return Context.new(self, context_id)
 end
 
-local function registerMissingTabs(self: Browser)
-	local targets = self:callMethod(Target.GetTargets, nil :: any)
+local function register_missing_tabs(self: Browser)
+	local targets = self:call_method(Target.GetTargets, nil :: any)
 
-	local previousTargetId = ""
+	local previous_target_id = ""
 
-	for _, target in targets.targetInfos do
-		local targetId = target.targetId
+	for _, target in targets.target_infos do
+		local target_id = target.target_id
 
 		for _, tab in self.tabs do
-			if tab:getTargetId() == targetId or target.attached == false then
-				previousTargetId = targetId
+			if tab:get_target_id() == target_id or target.attached == false then
+				previous_target_id = target_id
 				break
 			end
 		end
 
-		if previousTargetId == targetId then
+		if previous_target_id == target_id then
 			continue
 		end
 
 		local tab = Tab.new(target, self.transport)
-		local tabIndex: number?
+		local tab_index: number?
 
 		for index, tab in self.tabs do
-			if tab:getTargetId() == previousTargetId then
-				tabIndex = index
+			if tab:get_target_id() == previous_target_id then
+				tab_index = index
 				break
 			end
 		end
 
-		if tabIndex ~= nil then
-			table.insert(self.tabs, tabIndex, tab)
+		if tab_index ~= nil then
+			table.insert(self.tabs, tab_index, tab)
 		else
 			table.insert(self.tabs, tab)
 		end
 
-		previousTargetId = targetId
+		previous_target_id = target_id
 	end
 end
 
-local function handleBrowserLevelEvents(self: Browser)
-	self:addEventListener(Target.TargetCreated, function(target)
-		local targetInfo = target.targetInfo
-		if targetInfo.type ~= "page" then
+local function handle_browser_level_events(self: Browser)
+	self:add_event_listener(Target.TargetCreated, function(target)
+		local target_info = target.target_info
+		if target_info.type ~= "page" then
 			return
 		end
 
-		local tab = Tab.new(targetInfo, self.transport)
+		local tab = Tab.new(target_info, self.transport)
 		table.insert(self.tabs, tab)
 	end)
 
-	self:addEventListener(Target.TargetInfoChanged, function(target)
-		local targetInfo = target.targetInfo
-		if targetInfo.type ~= "page" or targetInfo.url:sub(1, 11) == "devtools://" then
+	self:add_event_listener(Target.TargetInfoChanged, function(target)
+		local target_info = target.target_info
+		if target_info.type ~= "page" or target_info.url:sub(1, 11) == "devtools://" then
 			return
 		end
 
 		for _, tab in self.tabs do
-			if targetInfo.targetId == tab:getTargetId() then
-				tab:updateTargetInfo(targetInfo)
+			if target_info.target_id == tab:get_target_id() then
+				tab:update_target_info(target_info)
 				break
 			end
 		end
 	end)
 
-	self:addEventListener(Target.TargetDestroyed, function(target)
+	self:add_event_listener(Target.TargetDestroyed, function(target)
 		for index, tab in self.tabs do
-			if target.targetId == tab:getTargetId() then
+			if target.target_id == tab:get_target_id() then
 				table.remove(self.tabs, index)
 				break
 			end
@@ -151,32 +151,32 @@ local function handleBrowserLevelEvents(self: Browser)
 end
 
 local function close(self: Browser)
-	self.transport:callMethodOnBrowser(Browser.Close)
+	self.transport:call_method_on_browser(Browser.Close)
 	self.transport:shutdown()
 end
 
 --- Allows you to drive an externally-launched Chrome process instead of launch one via Browser.new.
 --- If the browser is idle for `idleBrowserTimeout`, the connection will be dropped.
 --- @within Browser
-local function connectWithTimeout(websocketUrl: string, idleBrowserTimeout: number): Browser
-	local transport = Transport.new(websocketUrl, idleBrowserTimeout)
+local function connect_with_timeout(websocket_url: string, idle_browser_timeout: number): Browser
+	local transport = Transport.new(websocket_url, idle_browser_timeout)
 
 	local browser = {
 		transport = transport,
 		tabs = {},
-		getTabs = getTabs,
-		callMethod = callMethod,
-		addEventListener = addEventListener,
-		getVersion = getVersion,
-		newTabWithOptions = newTabWithOptions,
-		newTab = newTab,
-		newContext = newContext,
-		registerMissingTabs = registerMissingTabs,
+		get_tabs = get_tabs,
+		call_method = call_method,
+		add_event_listener = add_event_listener,
+		get_version = get_version,
+		new_tab_with_options = new_tab_with_options,
+		new_tab = new_tab,
+		new_context = new_context,
+		register_missing_tabs = register_missing_tabs,
 		close = close,
 	}
 
-	handleBrowserLevelEvents(browser)
-	browser:callMethod(Target.SetDiscoverTargets, { discover = true })
+	handle_browser_level_events(browser)
+	browser:call_method(Target.SetDiscoverTargets, { discover = true })
 
 	return browser
 end
@@ -184,24 +184,24 @@ end
 --- Allows you to drive an externally-launched Chrome process instead of launch one via Browser.new.
 --- If the browser is idle for 30 seconds, the connection will be dropped.
 --- @within Browser
-local function connect(websocketUrl: string): Browser
-	return connectWithTimeout(websocketUrl, DEFAULT_IDLE_TIMEOUT)
+local function connect(websocket_url: string): Browser
+	return connect_with_timeout(websocket_url, DEFAULT_IDLE_TIMEOUT)
 end
 
 --- Launch a new Chrome browser.
 --- The browser will have its user data (aka "profile") directory stored in a temporary directory.
 --- @within Browser
-local function new(launchOptions: ChromeProcess.LaunchOptions?): Browser
-	local chromeProcess = ChromeProcess.new(launchOptions)
-	local idleBrowserTimeout = if launchOptions == nil or launchOptions.idleBrowserTimeout == nil
+local function new(launch_options: ChromeProcess.LaunchOptions?): Browser
+	local chrome_process = ChromeProcess.new(launch_options)
+	local idle_browser_timeout = if launch_options == nil or launch_options.idle_browser_timeout == nil
 		then DEFAULT_IDLE_TIMEOUT
-		else launchOptions.idleBrowserTimeout
+		else launch_options.idle_browser_timeout
 
-	return connectWithTimeout(chromeProcess.websocketUrl, idleBrowserTimeout)
+	return connect_with_timeout(chrome_process.websocket_url, idle_browser_timeout)
 end
 
 return {
-	connectWithTimeout = connectWithTimeout,
+	connect_with_timeout = connect_with_timeout,
 	connect = connect,
 	new = new,
 }

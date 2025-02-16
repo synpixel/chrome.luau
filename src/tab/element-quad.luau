@@ -3,103 +3,103 @@ local types = require("../types")
 export type ElementQuad = types.ElementQuad
 
 local function height(self: ElementQuad): number
-	return self.bottomLeft.y - self.topLeft.y
+	return self.bottom_left.y - self.top_left.y
 end
 
 local function width(self: ElementQuad): number
-	return self.topRight.x - self.topLeft.x
+	return self.top_right.x - self.top_left.x
 end
 
-local function aspectRatio(self: ElementQuad): number
+local function aspect_ratio(self: ElementQuad): number
 	return self:width() / self:height()
 end
 
-local function mostLeft(self: ElementQuad): number
-	return math.min(self.topRight.x, self.topLeft.x, self.bottomRight.x, self.bottomLeft.x)
+local function most_left(self: ElementQuad): number
+	return math.min(self.top_right.x, self.top_left.x, self.bottom_right.x, self.bottom_left.x)
 end
 
-local function mostRight(self: ElementQuad): number
-	return math.max(self.topRight.x, self.topLeft.x, self.bottomRight.x, self.bottomLeft.x)
+local function most_right(self: ElementQuad): number
+	return math.max(self.top_right.x, self.top_left.x, self.bottom_right.x, self.bottom_left.x)
 end
 
-local function mostTop(self: ElementQuad): number
-	return math.min(self.topRight.y, self.topLeft.y, self.bottomRight.y, self.bottomLeft.y)
+local function most_top(self: ElementQuad): number
+	return math.min(self.top_right.y, self.top_left.y, self.bottom_right.y, self.bottom_left.y)
 end
 
-local function mostBottom(self: ElementQuad): number
-	return math.max(self.topRight.y, self.topLeft.y, self.bottomRight.y, self.bottomLeft.y)
+local function most_bottom(self: ElementQuad): number
+	return math.max(self.top_right.y, self.top_left.y, self.bottom_right.y, self.bottom_left.y)
 end
 
-local function strictlyAbove(self: ElementQuad, other: ElementQuad): boolean
-	return self:mostBottom() < other:mostTop()
+local function strictly_above(self: ElementQuad, other: ElementQuad): boolean
+	return self:most_bottom() < other:most_top()
 end
 
 local function above(self: ElementQuad, other: ElementQuad): boolean
-	return self:mostBottom() <= other:mostTop()
+	return self:most_bottom() <= other:most_top()
 end
 
-local function strictlyBelow(self: ElementQuad, other: ElementQuad): boolean
-	return self:mostTop() > other:mostBottom()
+local function strictly_below(self: ElementQuad, other: ElementQuad): boolean
+	return self:most_top() > other:most_bottom()
 end
 
 local function below(self: ElementQuad, other: ElementQuad): boolean
-	return self:mostTop() >= other:mostBottom()
+	return self:most_top() >= other:most_bottom()
 end
 
-local function strictlyLeftOf(self: ElementQuad, other: ElementQuad): boolean
-	return self:mostRight() < other:mostLeft()
+local function strictly_left_of(self: ElementQuad, other: ElementQuad): boolean
+	return self:most_right() < other:most_left()
 end
 
-local function leftOf(self: ElementQuad, other: ElementQuad): boolean
-	return self:mostRight() <= other:mostLeft()
+local function left_of(self: ElementQuad, other: ElementQuad): boolean
+	return self:most_right() <= other:most_left()
 end
 
-local function strictlyRightOf(self: ElementQuad, other: ElementQuad): boolean
-	return self:mostLeft() > other:mostRight()
+local function strictly_right_of(self: ElementQuad, other: ElementQuad): boolean
+	return self:most_left() > other:most_right()
 end
 
-local function rightOf(self: ElementQuad, other: ElementQuad): boolean
-	return self:mostLeft() >= other:mostRight()
+local function right_of(self: ElementQuad, other: ElementQuad): boolean
+	return self:most_left() >= other:most_right()
 end
 
-local function withinHorizontalBoundsOf(self: ElementQuad, other: ElementQuad): boolean
-	return self:mostLeft() >= other:mostLeft() and self:mostRight() <= other:mostRight()
+local function within_horizontal_bounds_of(self: ElementQuad, other: ElementQuad): boolean
+	return self:most_left() >= other:most_left() and self:most_right() <= other:most_right()
 end
 
-local function withinVerticalBoundsOf(self: ElementQuad, other: ElementQuad): boolean
-	return self:mostTop() >= other:mostTop() and self:mostBottom() <= other:mostBottom()
+local function within_vertical_bounds_of(self: ElementQuad, other: ElementQuad): boolean
+	return self:most_top() >= other:most_top() and self:most_bottom() <= other:most_bottom()
 end
 
-local function withinBoundsOf(self: ElementQuad, other: ElementQuad): boolean
-	return self:withinHorizontalBoundsOf(other) and self:withinVerticalBoundsOf(other)
+local function within_bounds_of(self: ElementQuad, other: ElementQuad): boolean
+	return self:within_horizontal_bounds_of(other) and self:within_vertical_bounds_of(other)
 end
 
 --- @within ElementQuad
-local function fromRawPoints(rawQuad: { number }): ElementQuad
+local function from_raw_points(raw_quad: { number }): ElementQuad
 	return {
-		topLeft = { x = rawQuad[1], y = rawQuad[2] },
-		topRight = { x = rawQuad[3], y = rawQuad[4] },
-		bottomRight = { x = rawQuad[5], y = rawQuad[6] },
-		bottomLeft = { x = rawQuad[7], y = rawQuad[8] },
+		top_left = { x = raw_quad[1], y = raw_quad[2] },
+		top_right = { x = raw_quad[3], y = raw_quad[4] },
+		bottom_right = { x = raw_quad[5], y = raw_quad[6] },
+		bottom_left = { x = raw_quad[7], y = raw_quad[8] },
 		height = height,
 		width = width,
-		aspectRatio = aspectRatio,
-		mostLeft = mostLeft,
-		mostRight = mostRight,
-		mostTop = mostTop,
-		mostBottom = mostBottom,
-		strictlyAbove = strictlyAbove,
+		aspect_ratio = aspect_ratio,
+		most_left = most_left,
+		most_right = most_right,
+		most_top = most_top,
+		most_bottom = most_bottom,
+		strictly_above = strictly_above,
 		above = above,
-		strictlyBelow = strictlyBelow,
+		strictly_below = strictly_below,
 		below = below,
-		strictlyLeftOf = strictlyLeftOf,
-		leftOf = leftOf,
-		strictlyRightOf = strictlyRightOf,
-		rightOf = rightOf,
-		withinHorizontalBoundsOf = withinHorizontalBoundsOf,
-		withinVerticalBoundsOf = withinVerticalBoundsOf,
-		withinBoundsOf = withinBoundsOf,
+		strictly_left_of = strictly_left_of,
+		left_of = left_of,
+		strictly_right_of = strictly_right_of,
+		right_of = right_of,
+		within_horizontal_bounds_of = within_horizontal_bounds_of,
+		within_vertical_bounds_of = within_vertical_bounds_of,
+		within_bounds_of = within_bounds_of,
 	}
 end
 
-return { fromRawPoints = fromRawPoints }
+return { from_raw_points = from_raw_points }

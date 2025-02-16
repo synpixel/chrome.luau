@@ -1,12 +1,12 @@
 local chrome = require("../src")
 
 local browser = chrome.Browser.new({ headless = false })
-local tab = browser:newTab()
+local tab = browser:new_tab()
 
-tab:navigateTo("https://www.google.com"):waitUntilNavigated()
+tab:navigate_to("https://www.google.com"):wait_until_navigated()
 
-tab:addEventListener(chrome.Event.PageLifecycleEvent, function(lifecycle)
+tab:add_event_listener(chrome.Event.PageLifecycleEvent, function(lifecycle)
 	if lifecycle.name == "DOMContentLoaded" then
-		print(tab:getUrl())
+		print(tab:get_url())
 	end
 end)
