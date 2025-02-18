@@ -666,7 +666,6 @@ local function enable_request_interception(self: Tab, interceptor: types.Request
 	self.request_interceptor = interceptor
 end
 
---- @within Tab
 local function authenticate(self: Tab, username: string?, password: string?): Tab
 	self.auth_handler = {
 		response = "ProvideCredentials",
@@ -674,6 +673,36 @@ local function authenticate(self: Tab, username: string?, password: string?): Ta
 		password = password,
 	}
 	return self
+end
+
+local function expose_function(self: Tab, name: string, fn: (data: any) -> ())
+	self.page_bindings[name] = fn
+
+	local expression = [[
+		(function addPageBinding(bindingName) {
+            const binding = window[bindingName];
+            window[bindingName] = (...args) => {
+              const me = window[bindingName];
+              let callbacks = me.callbacks;
+              if (!callbacks) {
+                callbacks = new Map();
+                me.callbacks = callbacks;
+              }
+              const seq = (me.lastSeq || 0) + 1;
+              me.lastSeq = seq;
+              const promise = new Promise((resolve, reject) => callbacks.set(seq, {resolve, reject}));
+              binding(JSON.stringify({ name: bindingName, seq, args }));
+              return promise;
+            };
+    	})()
+	]] -- https://github.com/puppeteer/puppeteer/blob/97c9fe2520723d45a5a86da06b888ae888d400be/src/common/helper.ts#L183
+
+	self:call_method(Runtime.AddBinding, { name = name })
+	self:call_method(Page.AddScriptToEvaluateOnNewDocument, { source = expression })
+end
+
+local function remove_function(self: Tab, name: string)
+	self.page_bindings[name] = nil
 end
 
 local function bypass_user_agent(self: Tab)
@@ -780,6 +809,14 @@ local function handle_tab_level_events(self: Tab)
 		end
 	end)
 
+	self:add_event_listener(Runtime.BindingCalled, function(binding)
+		local name = binding.name
+		local payload = binding.payload
+
+		local fn = self.page_bindings[name]
+		fn(serde.decode("json", payload))
+	end)
+
 	self:add_event_listener(Fetch.RequestPaused, function(params)
 		local interceptor = self.request_interceptor
 		if interceptor == nil then
@@ -829,6 +866,7 @@ local function new(target_info: Target.TargetInfo, transport: Transport.Transpor
 		request_interceptor = nil,
 		auth_handler = nil,
 		default_timeout = 20,
+		page_bindings = {},
 		slow_motion_multiplier = 0,
 		get_target_id = get_target_id,
 		update_target_info = update_target_info,
@@ -904,6 +942,8 @@ local function new(target_info: Target.TargetInfo, transport: Transport.Transpor
 		disable_fetch = disable_fetch,
 		enable_request_interception = enable_request_interception,
 		authenticate = authenticate,
+		expose_function = expose_function,
+		remove_function = remove_function,
 		enable_stealth_mode = enable_stealth_mode,
 		close = close,
 	}

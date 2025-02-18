@@ -127,7 +127,7 @@ export type Tab = {
 	-- TODO: loading_failed_handler
 	auth_handler: Fetch.AuthChallengeResponse?,
 	default_timeout: number,
-	-- TODO: page_bindings
+	page_bindings: { [string]: (data: any) -> () },
 	slow_motion_multiplier: number,
 
 	--- @within Tab
@@ -567,6 +567,12 @@ export type Tab = {
 
 	--- @within Tab
 	authenticate: (self: Tab, username: string, password: string?) -> Tab,
+
+	--- @within Tab
+	expose_function: (self: Tab, name: string, fn: (data: any) -> ()) -> (),
+
+	--- @within Tab
+	remove_function: (self: Tab, name: string) -> (),
 
 	--- @within Tab
 	enable_stealth_mode: (self: Tab) -> (),
