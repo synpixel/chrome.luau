@@ -55,13 +55,7 @@ local function read_json(path: string): any
 end
 
 local function fix_key(key: string): string
-	key = casing.camel_to_snake(key)
-
-	if key == "function" or key == "end" then
-		return `["{key}"]`
-	end
-
-	return key
+	return casing.camel_to_snake(key)
 end
 
 local function translate_type(definition: TypeDefinition): string
