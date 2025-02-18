@@ -217,7 +217,7 @@ export type Tab = {
 
 		@within Tab
 	]=]
-	handle_file_chooser: (self: Tab, files: { string }, nodeId: DOM.NodeId) -> (),
+	handle_file_chooser: (self: Tab, files: { string }, node_id: DOM.NodeId) -> (),
 
 	--- Pulls focus to this tab
 	--- @within Tab
