@@ -316,6 +316,7 @@ local function new(partial_launch_options: LaunchOptions?): ChromeProcess
 
 	start_process(launch_options)
 
+	-- TODO: fetch the websocket url from stdout
 	local websocket_url = fetch_websocket_url(launch_options.port :: number)
 
 	return { websocket_url = websocket_url }
