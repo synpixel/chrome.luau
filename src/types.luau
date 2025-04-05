@@ -419,10 +419,10 @@ export type Tab = {
 	find_elements_by_xpath: (self: Tab, selector: string) -> { Element },
 
 	--- @within Tab
-	wait_for_element: (self: Tab, selector: string, timeout: number?) -> Element,
+	wait_for_element: (self: Tab, selector: string, timeout: number?) -> Element?,
 
 	--- @within Tab
-	wait_for_xpath: (self: Tab, selector: string, timeout: number?) -> Element,
+	wait_for_xpath: (self: Tab, selector: string, timeout: number?) -> Element?,
 
 	--- @within Tab
 	wait_for_elements: (self: Tab, selector: string, timeout: number?) -> { Element },
@@ -694,7 +694,7 @@ export type Element = {
 	find_elements: (self: Element, selector: string) -> { Element },
 
 	--- @within Element
-	wait_for_element: (self: Element, selector: string, timeout: number?) -> Element,
+	wait_for_element: (self: Element, selector: string, timeout: number?) -> Element?,
 
 	--- @within Element
 	wait_for_elements: (self: Element, selector: string, timeout: number?) -> { Element },

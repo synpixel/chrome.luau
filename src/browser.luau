@@ -55,16 +55,18 @@ local function new_tab_with_options(
 	}
 ): Tab.Tab
 	local target_id = self:call_method(Target.CreateTarget, options).target_id
-
-	return Wait.with_timeout(20):pause_until(function()
+	local tab = Wait.with_timeout(20):pause_until(function()
 		for index, tab in self.tabs do
 			if tab:get_target_id() == target_id then
 				return tab :: any
 			end
 		end
 
-		return Wait.None
+		return nil
 	end)
+
+	assert(tab, "Failed to fetch new tab")
+	return tab
 end
 
 local function new_tab(self: Browser): Tab.Tab

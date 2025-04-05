@@ -130,10 +130,11 @@ local function navigate_to(self: Tab, url: string): Tab
 end
 
 local function wait_until_navigated(self: Tab): Tab
-	Wait.with_timeout(self.default_timeout):pause_until(function()
-		return if self.navigating then Wait.None else nil
-	end)
+	local success = Wait.with_timeout(self.default_timeout):pause_until(function()
+		return if self.navigating then nil else true
+	end) or false
 
+	assert(success, "Tab never finished navigating")
 	return self
 end
 
@@ -424,29 +425,19 @@ local function find_elements_by_xpath(self: Tab, query: string): { Element }
 	return elements
 end
 
-local function wait_for_element(self: Tab, selector: string, timeout: number?): Element
+local function wait_for_element(self: Tab, selector: string, timeout: number?): Element?
 	local timeout = timeout or self.default_timeout
 
 	return Wait.with_timeout(timeout):pause_until(function()
-		local element = self:find_element(selector)
-		if element == nil then
-			return Wait.None
-		end
-
-		return element
+		return self:find_element(selector)
 	end)
 end
 
-local function wait_for_xpath(self: Tab, selector: string, timeout: number?): Element
+local function wait_for_xpath(self: Tab, selector: string, timeout: number?): Element?
 	local timeout = timeout or self.default_timeout
 
 	return Wait.with_timeout(timeout):pause_until(function()
-		local element = self:find_element_by_xpath(selector)
-		if element == nil then
-			return Wait.None
-		end
-
-		return element
+		return self:find_element_by_xpath(selector)
 	end)
 end
 
@@ -455,12 +446,8 @@ local function wait_for_elements(self: Tab, selector: string, timeout: number?):
 
 	return Wait.with_timeout(timeout):pause_until(function()
 		local elements = self:find_elements(selector)
-		if #elements <= 0 then
-			return Wait.None
-		end
-
-		return elements
-	end)
+		return #elements > 0 and elements
+	end) or {}
 end
 
 local function wait_for_elements_by_xpath(self: Tab, selector: string, timeout: number?): { Element }
@@ -468,12 +455,8 @@ local function wait_for_elements_by_xpath(self: Tab, selector: string, timeout: 
 
 	return Wait.with_timeout(timeout):pause_until(function()
 		local elements = self:find_elements_by_xpath(selector)
-		if #elements <= 0 then
-			return Wait.None
-		end
-
-		return elements
-	end)
+		return #elements > 0 and elements
+	end) or {}
 end
 
 local function move_mouse_to_point(self: Tab, point: types.Point): Tab

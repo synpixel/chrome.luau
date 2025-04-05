@@ -3,25 +3,23 @@ local task = require("@lune/task")
 export type Wait = {
 	timeout: number,
 	sleep: number,
-	pause_until: <T>(self: Wait, predicate: () -> T) -> T,
+	pause_until: <T>(self: Wait, try: () -> T?) -> T?,
 }
 
 local DEFAULT_TIMEOUT = 10
 local DEFAULT_SLEEP = 0.1
 
-local None = table.freeze({}) :: any
-
-local function pause_until<T>(self: Wait, predicate: () -> T): T
+local function pause_until<T>(self: Wait, try: () -> T?): T?
 	local start = os.clock()
 
 	while true do
-		local value = predicate()
-		if value ~= None then
+		local value = try()
+		if value ~= nil then
 			return value
 		end
 
 		if os.clock() - start > self.timeout then
-			error("Wait.pause_until timed out")
+			return nil
 		end
 
 		task.wait(self.sleep)
@@ -49,7 +47,6 @@ local function forever(): Wait
 end
 
 return {
-	None = None,
 	new = new,
 	with_timeout = with_timeout,
 	with_sleep = with_sleep,

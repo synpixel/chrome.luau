@@ -64,16 +64,11 @@ local function find_elements(self: Element, selector: string): { Element }
 	return self.parent:run_query_selector_all_on_node(self.node_id, selector)
 end
 
-local function wait_for_element(self: Element, selector: string, timeout: number?): Element
+local function wait_for_element(self: Element, selector: string, timeout: number?): Element?
 	local timeout = timeout or DEFAULT_TIMEOUT
 
 	return Wait.with_timeout(timeout):pause_until(function()
-		local element = self:find_element(selector)
-		if element == nil then
-			return Wait.None
-		end
-
-		return element
+		return self:find_element(selector)
 	end)
 end
 
@@ -82,12 +77,8 @@ local function wait_for_elements(self: Element, selector: string, timeout: numbe
 
 	return Wait.with_timeout(timeout):pause_until(function()
 		local elements = self:find_elements(selector)
-		if #elements <= 0 then
-			return Wait.None
-		end
-
-		return elements
-	end)
+		return #elements > 0 and elements
+	end) or {}
 end
 
 local function call_js_function(
@@ -128,7 +119,7 @@ local function get_midpoint(self: Element): types.Point
 		}
 	end
 
-	return Wait.with_timeout(20):pause_until(function()
+	local midpoint = Wait.with_timeout(20):pause_until(function()
 		local result = self:call_js_function([[
 			function() {
                 let rect = this.getBoundingClientRect();
@@ -143,11 +134,14 @@ local function get_midpoint(self: Element): types.Point
 
 		local midpoint = extract_midpoint(result)
 		if midpoint.x == 0 then
-			return Wait.None
+			return nil
 		end
 
 		return midpoint
 	end)
+
+	assert(midpoint, "Failed to get element midpoint")
+	return midpoint
 end
 
 local function get_box_model(self: Element): BoxModel.BoxModel
