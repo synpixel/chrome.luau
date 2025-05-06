@@ -2,7 +2,7 @@ local task = require("@lune/task")
 local net = require("@lune/net")
 local serde = require("@lune/serde")
 local casing = require("./utils/casing")
-local Target = require("./protocol/Target")
+local Target = require("./protocol/target")
 
 export type Transport = {
 	connection: net.WebSocket,

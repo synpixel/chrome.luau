@@ -1,27 +1,27 @@
 local serde = require("@lune/serde")
 local Regex = require("@lune/regex")
 local task = require("@lune/task")
-local Transport = require("../transport")
-local Element = require("./element")
-local ElementQuad = require("./element-quad")
-local BoxModel = require("./box-model")
-local Dialog = require("./dialog")
-local keys = require("./keys")
-local Wait = require("../utils/wait")
-local base64 = require("../../luau_packages/base64")
-local types = require("../types")
-local Target = require("../protocol/Target")
-local Page = require("../protocol/Page")
-local Browser = require("../protocol/Browser")
-local Emulation = require("../protocol/Emulation")
-local Runtime = require("../protocol/Runtime")
-local Network = require("../protocol/Network")
-local DOM = require("../protocol/DOM")
-local Input = require("../protocol/Input")
-local Log = require("../protocol/Log")
-local Debugger = require("../protocol/Debugger")
-local Profiler = require("../protocol/Profiler")
-local Fetch = require("../protocol/Fetch")
+local Transport = require("./transport")
+local Element = require("./tab/element")
+local ElementQuad = require("./tab/element-quad")
+local BoxModel = require("./tab/box-model")
+local Dialog = require("./tab/dialog")
+local keys = require("./tab/keys")
+local Wait = require("./utils/wait")
+local base64 = require("./../luau_packages/base64")
+local types = require("./types")
+local Target = require("./protocol/target")
+local Page = require("./protocol/page")
+local Browser = require("./protocol/browser")
+local Emulation = require("./protocol/emulation")
+local Runtime = require("./protocol/runtime")
+local Network = require("./protocol/network")
+local DOM = require("./protocol/dom")
+local Input = require("./protocol/input")
+local Log = require("./protocol/log")
+local Debugger = require("./protocol/debugger")
+local Profiler = require("./protocol/profiler")
+local Fetch = require("./protocol/fetch")
 
 export type Tab = types.Tab
 
@@ -289,7 +289,7 @@ local function print_to_pdf(
 		page_ranges: string?,
 		header_template: string?,
 		footer_template: string?,
-		prefer_csspage_size: boolean?,
+		prefer_css_page_size: boolean?,
 		generate_tagged_pdf: boolean?,
 		generate_document_outline: boolean?,
 	}?

@@ -4,8 +4,8 @@ local Tab = require("./tab")
 local Context = require("./context")
 local Wait = require("./utils/wait")
 local types = require("./types")
-local Browser = require("./protocol/Browser")
-local Target = require("./protocol/Target")
+local Browser = require("./protocol/browser")
+local Target = require("./protocol/target")
 
 export type Browser = types.Browser
 

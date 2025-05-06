@@ -1,5 +1,5 @@
 local types = require("../types")
-local Page = require("../protocol/Page")
+local Page = require("../protocol/page")
 
 export type BoxModel = types.BoxModel
 

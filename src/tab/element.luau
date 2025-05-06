@@ -2,8 +2,8 @@ local ElementQuad = require("./element-quad")
 local BoxModel = require("./box-model")
 local Wait = require("../utils/wait")
 local types = require("../types")
-local DOM = require("../protocol/DOM")
-local Runtime = require("../protocol/Runtime")
+local DOM = require("../protocol/dom")
+local Runtime = require("../protocol/runtime")
 
 export type Element = types.Element
 

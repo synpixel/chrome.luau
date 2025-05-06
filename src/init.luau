@@ -1,10 +1,10 @@
-local ChromeProcess = require("./chrome-process")
-local Browser = require("./browser")
-local Context = require("./context")
-local Tab = require("./tab")
-local Wait = require("./utils/wait")
-local Method = require("./protocol/method")
-local Event = require("./protocol/event")
+local ChromeProcess = require("./src/chrome-process")
+local Browser = require("./src/browser")
+local Context = require("./src/context")
+local Tab = require("./src/tab")
+local Wait = require("./src/utils/wait")
+local Method = require("./src/protocol/method")
+local Event = require("./src/protocol/event")
 
 export type LaunchOptions = ChromeProcess.LaunchOptions
 export type Browser = Browser.Browser

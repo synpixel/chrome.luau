@@ -1,4 +1,4 @@
-type Transform = ((x: string) -> string) & (<K, V>(x: { [K]: V }) -> { [K]: V })
+type TransformCasingFn = ((x: string) -> string) & (<K, V>(x: { [K]: V }) -> { [K]: V })
 
 local function transform(x: any, processor: (string) -> string): any
 	if typeof(x) == "string" then
@@ -29,11 +29,11 @@ end
 
 local function camel_to_snake(x: any): any
 	return transform(x, function(str)
-		return str:gsub("([a-z])([A-Z])", "%1_%2"):lower()
+		return str:gsub("(%u+)(%u%l)", "%1_%2"):gsub("([a-z%d])(%u)", "%1_%2"):lower()
 	end)
 end
 
 return {
-	snake_to_camel = snake_to_camel :: Transform,
-	camel_to_snake = camel_to_snake :: Transform,
+	snake_to_camel = snake_to_camel :: TransformCasingFn,
+	camel_to_snake = camel_to_snake :: TransformCasingFn,
 }

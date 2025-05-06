@@ -1,15 +1,15 @@
 local Transport = require("./transport")
 local Dialog = require("./tab/dialog")
 local keys = require("./tab/keys")
-local Target = require("./protocol/Target")
-local Page = require("./protocol/Page")
-local Browser = require("./protocol/Browser")
-local Runtime = require("./protocol/Runtime")
-local Network = require("./protocol/Network")
-local DOM = require("./protocol/DOM")
-local Log = require("./protocol/Log")
-local Profiler = require("./protocol/Profiler")
-local Fetch = require("./protocol/Fetch")
+local Target = require("./protocol/target")
+local Page = require("./protocol/page")
+local Browser = require("./protocol/browser")
+local Runtime = require("./protocol/runtime")
+local Network = require("./protocol/network")
+local DOM = require("./protocol/dom")
+local Log = require("./protocol/log")
+local Profiler = require("./protocol/profiler")
+local Fetch = require("./protocol/fetch")
 
 --[=[
 	A handle to an instance of Chrome / Chromium, which wraps a WebSocket connection to its debugging port.
@@ -357,7 +357,7 @@ export type Tab = {
 			page_ranges: string?,
 			header_template: string?,
 			footer_template: string?,
-			prefer_csspage_size: boolean?,
+			prefer_css_page_size: boolean?,
 			generate_tagged_pdf: boolean?,
 			generate_document_outline: boolean?,
 		}?

@@ -2,7 +2,6 @@ local process = require("@lune/process")
 local fs = require("@lune/fs")
 local serde = require("@lune/serde")
 local stdio = require("@lune/stdio")
-local casing = require("../src/utils/casing")
 
 type TypeDefinition = {
 	name: string,
@@ -38,9 +37,62 @@ type ProtocolDefinition = {
 	domains: { DomainDefinition },
 }
 
+type TransformCasingFn = ((x: string) -> string) & (<K, V>(x: { [K]: V }) -> { [K]: V })
+
 local IN = "json"
 local OUT = "src/protocol"
 local FORMAT = true
+
+local snake_to_camel: TransformCasingFn
+local camel_to_snake: TransformCasingFn
+local pascal_to_kebab: TransformCasingFn
+
+do
+	local function transform(x: any, processor: (string) -> string): any
+		if typeof(x) == "string" then
+			return processor(x)
+		elseif typeof(x) == "table" then
+			local clone = {}
+
+			for key, value in x do
+				if typeof(value) == "table" then
+					value = transform(value, processor)
+				end
+				clone[transform(key, processor)] = value
+			end
+
+			return clone
+		else
+			return x
+		end
+	end
+
+	function snake_to_camel(x: any): any
+		return transform(x, function(str)
+			return str:gsub("_(%l)", function(char)
+				return char:upper()
+			end)
+		end)
+	end
+
+	function camel_to_snake(x: any): any
+		return transform(x, function(str)
+			return str:gsub("(%u+)(%u%l)", "%1_%2"):gsub("([a-z%d])(%u)", "%1_%2"):lower()
+		end)
+	end
+
+	function pascal_to_kebab(x: any): any
+		return transform(x, function(str)
+			return str:gsub("(%u+)(%u%l)", "%1-%2")
+				:gsub("(%l)(%u)", "%1-%2")
+				:gsub("%-", "%%")
+				:gsub("([A-Z]+)", function(word)
+					return word:lower()
+				end)
+				:gsub("%%", "-")
+		end)
+	end
+end
 
 local function stylua(input: string): string
 	local result = process.spawn("stylua", { "-" }, { stdin = input, shell = true })
@@ -55,7 +107,7 @@ local function read_json(path: string): any
 end
 
 local function fix_key(key: string): string
-	key = casing.camel_to_snake(key)
+	key = camel_to_snake(key)
 
 	if key == "function" or key == "end" then
 		return `["{key}"]`
@@ -118,7 +170,7 @@ local function write_domain_definition(domain: DomainDefinition): string
 
 	if domain.dependencies ~= nil then
 		for _, dependency in domain.dependencies do
-			file ..= `local {dependency} = require("./{dependency}")\n`
+			file ..= `local {dependency} = require("./{pascal_to_kebab(dependency)}")\n`
 		end
 	end
 
@@ -128,7 +180,7 @@ local function write_domain_definition(domain: DomainDefinition): string
 		end
 	end
 
-	file ..= "return table.freeze({"
+	file ..= "return table.freeze {"
 
 	if domain.commands ~= nil then
 		for _, command in domain.commands do
@@ -185,7 +237,7 @@ local function write_domain_definition(domain: DomainDefinition): string
 		end
 	end
 
-	file ..= "})"
+	file ..= "}"
 
 	return if FORMAT then stylua(file) else file
 end
@@ -199,11 +251,11 @@ local function write_method_file(...: ProtocolDefinition): string
 			if domain.commands == nil then
 				continue
 			end
-			file ..= `local {domain.domain} = require("./{domain.domain}")\n`
+			file ..= `local {domain.domain} = require("./{pascal_to_kebab(domain.domain)}")\n`
 		end
 	end
 
-	file ..= "return table.freeze({"
+	file ..= "return table.freeze {"
 
 	for _, definition in definitions do
 		for _, domain in definition.domains do
@@ -218,7 +270,7 @@ local function write_method_file(...: ProtocolDefinition): string
 		end
 	end
 
-	file ..= "})"
+	file ..= "}"
 
 	return if FORMAT then stylua(file) else file
 end
@@ -232,11 +284,11 @@ local function write_event_file(...: ProtocolDefinition): string
 			if domain.events == nil then
 				continue
 			end
-			file ..= `local {domain.domain} = require("./{domain.domain}")\n`
+			file ..= `local {domain.domain} = require("./{pascal_to_kebab(domain.domain)}")\n`
 		end
 	end
 
-	file ..= "return table.freeze({"
+	file ..= "return table.freeze {"
 
 	for _, definition in definitions do
 		for _, domain in definition.domains do
@@ -251,7 +303,7 @@ local function write_event_file(...: ProtocolDefinition): string
 		end
 	end
 
-	file ..= "})"
+	file ..= "}"
 
 	return if FORMAT then stylua(file) else file
 end
@@ -264,32 +316,30 @@ if fs.isDir(OUT) then
 end
 fs.writeDir(OUT)
 
-local log = `{stdio.color("cyan")}%s{stdio.color("reset")} {stdio.style("dim")}>{stdio.style("reset")} {OUT}/%s.luau`
-
 for _, domain in browser_definition.domains do
 	local file = write_domain_definition(domain)
-	fs.writeFile(`{OUT}/{domain.domain}.luau`, file)
-
-	print(log:format(domain.domain, domain.domain))
+	local path = `{OUT}/{pascal_to_kebab(domain.domain)}.luau`
+	fs.writeFile(path, file)
+	print(`{domain.domain} > {path}`)
 end
 
 for _, domain in js_definition.domains do
 	local file = write_domain_definition(domain)
-	fs.writeFile(`{OUT}/{domain.domain}.luau`, file)
-
-	print(log:format(domain.domain, domain.domain))
+	local path = `{OUT}/{pascal_to_kebab(domain.domain)}.luau`
+	fs.writeFile(path, file)
+	print(`{domain.domain} > {path}`)
 end
 
 do
 	local file = write_method_file(browser_definition, js_definition)
-	fs.writeFile(`{OUT}/method.luau`, file)
-
-	print(log:format("Method", "method"))
+	local path = `{OUT}/method.luau`
+	fs.writeFile(path, file)
+	print(`Method > {path}`)
 end
 
 do
 	local file = write_event_file(browser_definition, js_definition)
-	fs.writeFile(`{OUT}/event.luau`, file)
-
-	print(log:format("Event", "event"))
+	local path = `{OUT}/event.luau`
+	fs.writeFile(path, file)
+	print(`Event > {path}`)
 end

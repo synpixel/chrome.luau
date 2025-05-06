@@ -1,5 +1,5 @@
 local Transport = require("../transport")
-local Page = require("../protocol/Page")
+local Page = require("../protocol/page")
 
 export type Dialog = {
 	session_id: string,
