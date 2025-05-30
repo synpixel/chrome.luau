@@ -1,9 +1,8 @@
 local process = require("@lune/process")
 local fs = require("@lune/fs")
 local net = require("@lune/net")
-local serde = require("@lune/serde")
+local Regex = require("@lune/regex")
 local tempfile = require("./utils/tempfile")
-local casing = require("./utils/casing")
 
 --[=[
 	Represents the way in which Chrome is run. By default it will search for a Chrome
@@ -51,7 +50,11 @@ export type LaunchOptions = {
 }
 
 --- @class ChromeProcess
-export type ChromeProcess = { websocket_url: string }
+export type ChromeProcess = {
+	child: process.ChildProcess,
+	websocket_url: string,
+	temp_user_data_dir: string?,
+}
 
 local DEFAULT_ARGS = table.freeze({
 	"--disable-background-networking",
@@ -81,18 +84,18 @@ local DEFAULT_ARGS = table.freeze({
 })
 
 local function which(binary_name: string): string?
-	local path = process.env.PATH
-	if path == nil then
+	local path = process.env.PATH or process.env.Path
+	if not path then
 		return nil
 	end
 
 	for _, dir in path:split(";") do
-		if fs.isDir(dir) == false then
+		if not fs.isDir(dir) then
 			continue
 		end
 
 		for _, file in fs.readDir(dir) do
-			if (process.os == "windows" and file:match(`{binary_name}.exe`) ~= nil) or file == binary_name then
+			if (process.os == "windows" and file:match(`{binary_name}.exe`)) or file == binary_name then
 				return `{dir}/{file}`
 			end
 		end
@@ -163,6 +166,7 @@ local function default_executable(): string
 end
 
 -- This does not work as `net.serve` won't throw
+-- TODO: find an actual solution
 local function port_is_available(port: number): boolean
 	local available, handle = pcall(net.serve, port, function()
 		return nil :: any
@@ -196,7 +200,41 @@ local function get_available_port(): number
 	error("Failed to find an available port")
 end
 
-local function start_process(launch_options: LaunchOptions): process.SpawnResult
+local function get_websocket_url_from_output(child: process.ChildProcess): string
+	local port_taken_regex = Regex.new("ERROR.*bind\\(\\)")
+	local root_sandbox = "Running as root without --no-sandbox is not supported"
+
+	local regex = Regex.new("listening on (.*/devtools/browser/.*)$")
+
+	local function extract(text: string): string?
+		local captures = regex:captures(text)
+		if not captures then
+			return nil
+		end
+		local capture = captures:get(1)
+		return capture and capture.text
+	end
+
+	local stderr = child.stderr:read() :: string
+	for line in stderr:gmatch("([^\n]+)") do
+		if string.find(line, root_sandbox) then
+			error("Running as root with no sandbox")
+		end
+
+		if port_taken_regex:isMatch(line) then
+			error("Debug port in use")
+		end
+
+		local answer = extract(line)
+		if answer then
+			return answer
+		end
+	end
+
+	error("Port open timeout")
+end
+
+local function start_process(launch_options: LaunchOptions): (process.ChildProcess, string?)
 	assert(launch_options.port ~= nil, "Port is required")
 
 	local args = {
@@ -206,11 +244,13 @@ local function start_process(launch_options: LaunchOptions): process.SpawnResult
 		"--no-first-run",
 	}
 
+	local temp_user_data_dir: string?
 	if launch_options.user_data_dir ~= nil then
 		table.insert(args, `--user-data-dir={launch_options.user_data_dir}`)
 	else
 		local user_data_dir = tempfile("chrome-luau-profile")
 		table.insert(args, `--user-data-dir={user_data_dir}`)
+		temp_user_data_dir = user_data_dir
 	end
 
 	if launch_options.disable_default_args ~= true then
@@ -273,23 +313,11 @@ local function start_process(launch_options: LaunchOptions): process.SpawnResult
 
 	assert(launch_options.path ~= nil, "Path is required")
 
-	local result = process.spawn(launch_options.path, args, {
-		env = launch_options.process_envs,
+	return process.create(launch_options.path, args, {
 		shell = true,
-		stdio = "none",
-	})
-
-	return result
-end
-
-local function fetch_websocket_url(port: number): string
-	local response = net.request(`http://localhost:{port}/json/version`)
-	assert(response.ok, `{response.statusCode} {response.statusMessage}`)
-
-	local version = serde.decode("json", response.body)
-	version = casing.camel_to_snake(version)
-
-	return version.web_socket_debugger_url
+		env = launch_options.process_envs,
+	}),
+		temp_user_data_dir
 end
 
 local function new(partial_launch_options: LaunchOptions?): ChromeProcess
@@ -314,12 +342,13 @@ local function new(partial_launch_options: LaunchOptions?): ChromeProcess
 		launch_options.port = get_available_port()
 	end
 
-	start_process(launch_options)
-
-	-- TODO: fetch the websocket url from stdout
-	local websocket_url = fetch_websocket_url(launch_options.port :: number)
-
-	return { websocket_url = websocket_url }
+	local child, temp_user_data_dir = start_process(launch_options)
+	local websocket_url = get_websocket_url_from_output(child)
+	return {
+		child = child,
+		websocket_url = websocket_url,
+		temp_user_data_dir = temp_user_data_dir,
+	}
 end
 
 return { new = new }

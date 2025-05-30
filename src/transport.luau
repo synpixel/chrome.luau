@@ -62,7 +62,7 @@ local function call_method_on_browser<Request, Response>(
 	local thread = coroutine.running()
 	self.waiting_calls[id] = thread
 
-	self.connection.send(message)
+	self.connection:send(message)
 
 	local response = coroutine.yield()
 	if response.error ~= nil then
@@ -141,7 +141,7 @@ local function handle_incoming_messages(self: Transport)
 				break
 			end
 
-			local message = self.connection.next()
+			local message = self.connection:next()
 			if message == nil then
 				continue
 			end
@@ -178,7 +178,7 @@ end
 
 local function shutdown(self: Transport)
 	self.open = false
-	self.connection.close(1000)
+	self.connection:close(1000)
 end
 
 local function new(websocket_url: string, idle_browser_timeout: number): Transport

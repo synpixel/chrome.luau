@@ -24,6 +24,6 @@ end
 
 query("Google Chrome")
 query("WebKit")
-query("Skibidi Toilet")
+query("Destroy Lonely")
 
 browser:close()

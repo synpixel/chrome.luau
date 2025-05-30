@@ -9,6 +9,8 @@ export type Element = types.Element
 
 local DEFAULT_TIMEOUT = 3
 
+local new: (parent: types.Tab, node_id: DOM.NodeId) -> Element?
+
 local function extract_midpoint(remote_object: Runtime.RemoteObject): { x: number, y: number }
 	if remote_object.preview == nil then
 		return { x = 0, y = 0 }
@@ -60,23 +62,83 @@ local function find_element(self: Element, selector: string): Element?
 	return self.parent:run_query_selector_on_node(self.node_id, selector)
 end
 
+local function find_element_by_xpath(self: Element, query: string): Element?
+	self.parent:get_document()
+
+	local search = self.parent:call_method(DOM.PerformSearch, { query = query, include_user_agent_shadow_dom = true })
+	if search.result_count <= 0 then
+		return nil
+	end
+
+	local results = self.parent:call_method(DOM.GetSearchResults, {
+		search_id = search.search_id,
+		from_index = 0,
+		to_index = search.result_count,
+	})
+
+	local node_id = results.node_ids[1]
+	return new(self.parent, node_id)
+end
+
 local function find_elements(self: Element, selector: string): { Element }
 	return self.parent:run_query_selector_all_on_node(self.node_id, selector)
 end
 
+local function find_elements_by_xpath(self: Element, query: string): { Element }
+	self.parent:get_document()
+
+	local search = self.parent:call_method(DOM.PerformSearch, { query = query, include_user_agent_shadow_dom = true })
+	if search.result_count <= 0 then
+		return {}
+	end
+
+	local results = self.parent:call_method(DOM.GetSearchResults, {
+		search_id = search.search_id,
+		from_index = 0,
+		to_index = search.result_count,
+	})
+
+	local node_ids = results.node_ids
+	local elements = {}
+
+	for _, node_id in node_ids do
+		local element = new(self.parent, node_id)
+		if element == nil then
+			continue
+		end
+
+		table.insert(elements, element)
+	end
+
+	return elements
+end
+
 local function wait_for_element(self: Element, selector: string, timeout: number?): Element?
 	local timeout = timeout or DEFAULT_TIMEOUT
-
 	return Wait.with_timeout(timeout):pause_until(function()
 		return self:find_element(selector)
 	end)
 end
 
+local function wait_for_xpath(self: Element, selector: string, timeout: number?): Element?
+	local timeout = timeout or DEFAULT_TIMEOUT
+	return Wait.with_timeout(timeout):pause_until(function()
+		return self:find_element_by_xpath(selector)
+	end)
+end
+
 local function wait_for_elements(self: Element, selector: string, timeout: number?): { Element }
 	local timeout = timeout or DEFAULT_TIMEOUT
-
 	return Wait.with_timeout(timeout):pause_until(function()
 		local elements = self:find_elements(selector)
+		return #elements > 0 and elements
+	end) or {}
+end
+
+local function wait_for_elements_by_xpath(self: Element, selector: string, timeout: number?): { Element }
+	local timeout = timeout or DEFAULT_TIMEOUT
+	return Wait.with_timeout(timeout):pause_until(function()
+		local elements = self:find_elements_by_xpath(selector)
 		return #elements > 0 and elements
 	end) or {}
 end
@@ -241,7 +303,7 @@ end
 --- the "backend_node_id" and "remote_object_id" which are stable identifiers, unlike node_id.
 --- We use these two when making various calls to the API because of that.
 --- @within Element
-local function new(parent: types.Tab, node_id: DOM.NodeId): Element?
+function new(parent: types.Tab, node_id: DOM.NodeId): Element?
 	if node_id == 0 then
 		return nil
 	end
@@ -272,9 +334,13 @@ local function new(parent: types.Tab, node_id: DOM.NodeId): Element?
 		get_inner_text = get_inner_text,
 		get_content = get_content,
 		find_element = find_element,
+		find_element_by_xpath = find_element_by_xpath,
 		find_elements = find_elements,
+		find_elements_by_xpath = find_elements_by_xpath,
 		wait_for_element = wait_for_element,
+		wait_for_xpath = wait_for_xpath,
 		wait_for_elements = wait_for_elements,
+		wait_for_elements_by_xpath = wait_for_elements_by_xpath,
 		call_js_function = call_js_function,
 		get_midpoint = get_midpoint,
 		get_box_model = get_box_model,

@@ -1,3 +1,4 @@
+local fs = require("@lune/fs")
 local ChromeProcess = require("./chrome-process")
 local Transport = require("./transport")
 local Tab = require("./tab")
@@ -155,6 +156,11 @@ end
 local function close(self: Browser)
 	self.transport:call_method_on_browser(Browser.Close)
 	self.transport:shutdown()
+
+	if self.process and self.process.temp_user_data_dir and fs.isDir(self.process.temp_user_data_dir) then
+		self.process.child.stderr:readToEnd() -- Yield until process is killed
+		fs.removeDir(self.process.temp_user_data_dir)
+	end
 end
 
 --- Allows you to drive an externally-launched Chrome process instead of launch one via Browser.new.
@@ -199,7 +205,9 @@ local function new(launch_options: ChromeProcess.LaunchOptions?): Browser
 		then DEFAULT_IDLE_TIMEOUT
 		else launch_options.idle_browser_timeout
 
-	return connect_with_timeout(chrome_process.websocket_url, idle_browser_timeout)
+	local browser = connect_with_timeout(chrome_process.websocket_url, idle_browser_timeout)
+	browser.process = chrome_process
+	return browser
 end
 
 return {

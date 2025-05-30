@@ -1,4 +1,5 @@
 local Transport = require("./transport")
+local ChromeProcess = require("./chrome-process")
 local Dialog = require("./tab/dialog")
 local keys = require("./tab/keys")
 local Target = require("./protocol/target")
@@ -25,6 +26,7 @@ local Fetch = require("./protocol/fetch")
 	@class Browser
 ]=]
 export type Browser = {
+	process: ChromeProcess.ChromeProcess?,
 	transport: Transport.Transport,
 	tabs: { Tab },
 
@@ -691,13 +693,25 @@ export type Element = {
 	find_element: (self: Element, selector: string) -> Element?,
 
 	--- @within Element
+	find_element_by_xpath: (self: Element, selector: string) -> Element?,
+
+	--- @within Element
 	find_elements: (self: Element, selector: string) -> { Element },
+
+	--- @within Element
+	find_elements_by_xpath: (self: Element, selector: string) -> { Element },
 
 	--- @within Element
 	wait_for_element: (self: Element, selector: string, timeout: number?) -> Element?,
 
 	--- @within Element
+	wait_for_xpath: (self: Element, selector: string, timeout: number?) -> Element?,
+
+	--- @within Element
 	wait_for_elements: (self: Element, selector: string, timeout: number?) -> { Element },
+
+	--- @within Element
+	wait_for_elements_by_xpath: (self: Element, selector: string, timeout: number?) -> { Element },
 
 	--- @within Element
 	call_js_function: (

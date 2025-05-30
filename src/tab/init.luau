@@ -1,27 +1,27 @@
 local serde = require("@lune/serde")
 local Regex = require("@lune/regex")
 local task = require("@lune/task")
-local Transport = require("./transport")
-local Element = require("./tab/element")
-local ElementQuad = require("./tab/element-quad")
-local BoxModel = require("./tab/box-model")
-local Dialog = require("./tab/dialog")
-local keys = require("./tab/keys")
-local Wait = require("./utils/wait")
-local base64 = require("./../luau_packages/base64")
-local types = require("./types")
-local Target = require("./protocol/target")
-local Page = require("./protocol/page")
-local Browser = require("./protocol/browser")
-local Emulation = require("./protocol/emulation")
-local Runtime = require("./protocol/runtime")
-local Network = require("./protocol/network")
-local DOM = require("./protocol/dom")
-local Input = require("./protocol/input")
-local Log = require("./protocol/log")
-local Debugger = require("./protocol/debugger")
-local Profiler = require("./protocol/profiler")
-local Fetch = require("./protocol/fetch")
+local Transport = require("../transport")
+local Element = require("@self/element")
+local ElementQuad = require("@self/element-quad")
+local BoxModel = require("@self/box-model")
+local Dialog = require("@self/dialog")
+local keys = require("@self/keys")
+local Wait = require("../utils/wait")
+local base64 = require("./../../luau_packages/base64")
+local types = require("../types")
+local Target = require("../protocol/target")
+local Page = require("../protocol/page")
+local Browser = require("../protocol/browser")
+local Emulation = require("../protocol/emulation")
+local Runtime = require("../protocol/runtime")
+local Network = require("../protocol/network")
+local DOM = require("../protocol/dom")
+local Input = require("../protocol/input")
+local Log = require("../protocol/log")
+local Debugger = require("../protocol/debugger")
+local Profiler = require("../protocol/profiler")
+local Fetch = require("../protocol/fetch")
 
 export type Tab = types.Tab
 
@@ -427,7 +427,6 @@ end
 
 local function wait_for_element(self: Tab, selector: string, timeout: number?): Element?
 	local timeout = timeout or self.default_timeout
-
 	return Wait.with_timeout(timeout):pause_until(function()
 		return self:find_element(selector)
 	end)
@@ -435,7 +434,6 @@ end
 
 local function wait_for_xpath(self: Tab, selector: string, timeout: number?): Element?
 	local timeout = timeout or self.default_timeout
-
 	return Wait.with_timeout(timeout):pause_until(function()
 		return self:find_element_by_xpath(selector)
 	end)
@@ -443,7 +441,6 @@ end
 
 local function wait_for_elements(self: Tab, selector: string, timeout: number?): { Element }
 	local timeout = timeout or self.default_timeout
-
 	return Wait.with_timeout(timeout):pause_until(function()
 		local elements = self:find_elements(selector)
 		return #elements > 0 and elements
@@ -452,7 +449,6 @@ end
 
 local function wait_for_elements_by_xpath(self: Tab, selector: string, timeout: number?): { Element }
 	local timeout = timeout or self.default_timeout
-
 	return Wait.with_timeout(timeout):pause_until(function()
 		local elements = self:find_elements_by_xpath(selector)
 		return #elements > 0 and elements

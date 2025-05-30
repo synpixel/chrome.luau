@@ -95,10 +95,10 @@ do
 end
 
 local function stylua(input: string): string
-	local result = process.spawn("stylua", { "-" }, { stdin = input, shell = true })
-	assert(result.ok, result.stderr)
-
-	return result.stdout
+	local child = process.create("stylua", { "-" }, { shell = true })
+	child.stdin:write(input)
+	child.stdin:close()
+	return child.stdout:readToEnd()
 end
 
 local function read_json(path: string): any
