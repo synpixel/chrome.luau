@@ -1,4 +1,5 @@
 local fs = require("@lune/fs")
+local task = require("@lune/task")
 local ChromeProcess = require("./chrome-process")
 local Transport = require("./transport")
 local Tab = require("./tab")
@@ -157,9 +158,8 @@ local function close(self: Browser)
 	self.transport:call_method_on_browser(Browser.Close)
 	self.transport:shutdown()
 
-	if self.process and self.process.temp_user_data_dir and fs.isDir(self.process.temp_user_data_dir) then
-		self.process.child.stderr:readToEnd() -- Yield until process is killed
-		fs.removeDir(self.process.temp_user_data_dir)
+	for _, on_close in self.on_close_hooks do
+		on_close()
 	end
 end
 
@@ -172,6 +172,7 @@ local function connect_with_timeout(websocket_url: string, idle_browser_timeout:
 	local browser = {
 		transport = transport,
 		tabs = {},
+		on_close_hooks = {},
 		get_tabs = get_tabs,
 		call_method = call_method,
 		add_event_listener = add_event_listener,
@@ -206,7 +207,24 @@ local function new(launch_options: ChromeProcess.LaunchOptions?): Browser
 		else launch_options.idle_browser_timeout
 
 	local browser = connect_with_timeout(chrome_process.websocket_url, idle_browser_timeout)
-	browser.process = chrome_process
+
+	local temp_user_data_dir = chrome_process.temp_user_data_dir
+	if temp_user_data_dir then
+		local thread = task.spawn(function()
+			chrome_process.child.stderr:readToEnd()
+			if fs.isDir(temp_user_data_dir) then
+				fs.removeDir(temp_user_data_dir)
+			end
+		end)
+
+		local ensure_cleanup = function()
+			Wait.forever():pause_until(function()
+				return if coroutine.status(thread) == "dead" then true else nil
+			end)
+		end
+		table.insert(browser.on_close_hooks, ensure_cleanup)
+	end
+
 	return browser
 end
 

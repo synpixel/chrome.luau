@@ -137,12 +137,17 @@ end
 local function handle_incoming_messages(self: Transport)
 	task.spawn(function()
 		while true do
-			if self.open == false then
+			if not self.open then
 				break
 			end
 
-			local message = self.connection:next()
-			if message == nil then
+			local success, message = pcall(self.connection.next, self.connection)
+			if not success then
+				self.open = false
+				break
+			end
+
+			if not message then
 				continue
 			end
 

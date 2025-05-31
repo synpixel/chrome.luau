@@ -26,9 +26,9 @@ local Fetch = require("./protocol/fetch")
 	@class Browser
 ]=]
 export type Browser = {
-	process: ChromeProcess.ChromeProcess?,
 	transport: Transport.Transport,
 	tabs: { Tab },
+	on_close_hooks: { () -> () },
 
 	--- @within Browser
 	get_tabs: (self: Browser) -> { Tab },

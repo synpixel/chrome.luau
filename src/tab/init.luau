@@ -130,11 +130,9 @@ local function navigate_to(self: Tab, url: string): Tab
 end
 
 local function wait_until_navigated(self: Tab): Tab
-	local success = Wait.with_timeout(self.default_timeout):pause_until(function()
+	Wait.with_timeout(self.default_timeout):pause_until(function()
 		return if self.navigating then nil else true
-	end) or false
-
-	assert(success, "Tab never finished navigating")
+	end)
 	return self
 end
 
