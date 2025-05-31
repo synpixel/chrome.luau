@@ -16,3 +16,5 @@ local png = tab:navigate_to("https://en.wikipedia.org/wiki/WebKit")
 fs.writeFile("screenshot.png", png)
 
 print("Screenshots successfully created.")
+
+browser:close()

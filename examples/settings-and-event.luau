@@ -10,3 +10,5 @@ tab:add_event_listener(chrome.Event.PageLifecycleEvent, function(lifecycle)
 		print(tab:get_url())
 	end
 end)
+
+browser:close()

@@ -15,3 +15,5 @@ print("PDF successfully created from internet web page.")
 local local_pdf = tab:navigate_to(FILE_PATH):wait_until_navigated():print_to_pdf()
 fs.writeFile("rust.pdf", local_pdf)
 print("PDF successfully created from local web page.")
+
+browser:close()
